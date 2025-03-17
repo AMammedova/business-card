@@ -6,8 +6,8 @@ interface Props {
 
 export default function Home({ searchParams }: Props) {
   const employeeId = searchParams.employeeId;
-
-  if (employeeId && typeof employeeId === "string") {
+  console.log(employeeId, "employeeId");
+  if (employeeId) {
     redirect(`/profile/${employeeId}`);
   } else {
     redirect("/profile/9");

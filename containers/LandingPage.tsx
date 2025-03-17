@@ -131,7 +131,7 @@ const DigitalBusinessCard = () => {
               >
                 <div className="w-10 h-10  rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
                   <Image
-                    src="/whatsUP.png"
+                    src="/whatsup.png"
                     alt="WhatsApp"
                     width={20}
                     height={20}
