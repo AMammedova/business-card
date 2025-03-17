@@ -1,5 +1,15 @@
-import LandingPage from "@/containers/LandingPage";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return <LandingPage />;
+interface Props {
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default function Home({ searchParams }: Props) {
+  const employeeId = searchParams.employeeId;
+
+  if (employeeId && typeof employeeId === "string") {
+    redirect(`/profile/${employeeId}`);
+  } else {
+    redirect("/profile/9");
+  }
 }

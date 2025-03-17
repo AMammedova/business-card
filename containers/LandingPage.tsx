@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -107,7 +105,7 @@ const DigitalBusinessCard = () => {
 
           {/* Profile picture positioned to overlap the header */}
           <div className="flex flex-col items-center -mt-32 px-8">
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105 hover:border-orange-500">
+            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105 hover:border-[#EC3237]">
               <img
                 src={employee.pictureUrl}
                 alt="Profile"
@@ -176,8 +174,6 @@ const DigitalBusinessCard = () => {
                 {company.slogan}
               </p>
 
-             
-
               <p className="text-center text-xs text-gray-500 mt-4 mb-2">
                 Social media and sites
               </p>
@@ -222,4 +218,3 @@ const DigitalBusinessCard = () => {
 };
 
 export default DigitalBusinessCard;
-
