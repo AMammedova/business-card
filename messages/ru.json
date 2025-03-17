@@ -1,6 +1,13 @@
 {
   "Landing": {
-  "name": "Имя",
-  "surname": "Фамилия"
+    "name": "Имя",
+    "surname": "Фамилия",
+    "position": "Должность",
+    "company": "Компания",
+    "saveToContacts": "Сохранить в контакты",
+    "textViaWhatsApp": "Написать в WhatsApp",
+    "call": "Позвонить",
+    "email": "Электронная почта",
+    "location": "Местоположение"
   }
-  }
+}

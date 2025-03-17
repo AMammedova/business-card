@@ -1,33 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import Image from "next/image";
-import { getEmployeeById } from "./services/employeeService";
-
-interface Logo {
-  url: string;
-}
-
-interface Site {
-  url: string;
-}
-
-interface CompanyResponseDto {
-  name: string;
-  slogan: string;
-  logoResponseDto: Logo[];
-  siteResponseDto: Site[];
-}
-
-interface Employee {
-  pictureUrl: string;
-  name: string;
-  surname: string;
-  position: string;
-  phoneNumber: string;
-  mail: string;
-  companyResponseDto: CompanyResponseDto[];
-}
+import { Employee } from "@/types/employee";
+import { downloadVCard } from "@/utils/vcard";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 const getSiteIcon = (url: string) => {
   if (url.includes("instagram")) return "instagram.png";
@@ -36,28 +14,8 @@ const getSiteIcon = (url: string) => {
   return "website.png";
 };
 
-const DigitalBusinessCard = ({ employeeId }: { employeeId: string }) => {
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await getEmployeeById(
-        employeeId ? parseInt(employeeId, 10) : 9
-      );
-      setEmployee(data);
-      setTimeout(() => setIsLoaded(true), 300);
-    };
-    fetchData();
-  }, []);
-
-  if (!employee) {
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-orange-50">
-        <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
+  const t = useTranslations("Landing");
 
   const company = employee.companyResponseDto[0];
 
@@ -86,11 +44,7 @@ const DigitalBusinessCard = ({ employeeId }: { employeeId: string }) => {
         </div>
       </div>
 
-      <div
-        className={`w-full max-w-xl mx-auto z-10 transition-all duration-500 p-2 ${
-          isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-        }`}
-      >
+      <div className="w-full max-w-xl mx-auto z-10 transition-all duration-500 p-2 ">
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
           {/* Header section with orange accent */}
           <div className="relative h-52 bg-[#EC3237] overflow-hidden">
@@ -103,6 +57,9 @@ const DigitalBusinessCard = ({ employeeId }: { employeeId: string }) => {
                 zIndex: 0,
               }}
             ></div>
+            <div className="absolute top-4 right-4">
+              <LanguageSwitcher />
+            </div>
           </div>
 
           <div className="flex flex-col items-center -mt-32 px-8">
@@ -123,8 +80,11 @@ const DigitalBusinessCard = ({ employeeId }: { employeeId: string }) => {
               {employee.position}, {company.name}
             </p>
 
-            <button className="mt-4 py-3 px-8 bg-[#EC3237] hover:bg-[#EC3237]/90 text-white rounded-full transition-all duration-300 shadow-lg transform hover:-translate-y-1 font-medium">
-              Save to Contacts
+            <button
+              onClick={() => downloadVCard(employee, company)}
+              className="mt-4 py-3 px-8 bg-[#EC3237] hover:bg-[#EC3237]/90 text-white rounded-full transition-all duration-300 shadow-lg transform hover:-translate-y-1 font-medium"
+            >
+              {t("saveToContacts")}
             </button>
 
             <div className="mt-6 w-full space-y-3">
@@ -141,7 +101,7 @@ const DigitalBusinessCard = ({ employeeId }: { employeeId: string }) => {
                   />
                 </div>
                 <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                  Text via WhatsApp
+                  {t("textViaWhatsApp")}
                 </span>
               </a>
               <a
@@ -176,10 +136,23 @@ const DigitalBusinessCard = ({ employeeId }: { employeeId: string }) => {
               <p className="text-center text-sm text-gray-500 mt-1">
                 {company.slogan}
               </p>
-
               <p className="text-center text-xs text-gray-500 mt-4 mb-2">
-                Social media and sites
+                {company?.info}
               </p>
+
+              <p className="text-center text-sm text-blue-500 p-2 cursor-pointer">
+              <span className="text-sm text-gray-800">{t("location")}:</span>{" "}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    company.location
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {company.location}
+                </a>
+              </p>
+
               <div className="flex justify-center items-center gap-4 mb-6">
                 {company.siteResponseDto.map((site, index) => (
                   <a

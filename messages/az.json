@@ -1,6 +1,13 @@
 {
   "Landing": {
     "name": "Ad",
-    "surname": "Soyad"
+    "surname": "Soyad",
+    "position": "Vəzifə",
+    "company": "Şirkət",
+    "saveToContacts": "Kontakta əlavə et",
+    "textViaWhatsApp": "WhatsApp ilə yaz",
+    "call": "Zəng et",
+    "email": "E-poçt",
+    "location": "Məkan"
   }
 }

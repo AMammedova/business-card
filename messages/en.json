@@ -1,6 +1,13 @@
 {
   "Landing": {
     "name": "Name",
-    "surname": "Surname"
+    "surname": "Surname",
+    "position": "Position",
+    "company": "Company",
+    "saveToContacts": "Save to Contacts",
+    "textViaWhatsApp": "Text via WhatsApp",
+    "call": "Call",
+    "email": "Email",
+    "location": "Location"
   }
 }

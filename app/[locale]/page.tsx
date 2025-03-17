@@ -6,11 +6,9 @@ interface Props {
 
 export default function Home({ searchParams }: Props) {
   const id = searchParams.id;
-  console.log(id, "test");
-
   if (id) {
     redirect(`/profile/${id}`);
   } else {
-    redirect("/profile/9");
+    redirect("/profile/1018");
   }
 }
