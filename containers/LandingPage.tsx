@@ -16,6 +16,7 @@ const getSiteIcon = (url: string) => {
 
 const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const t = useTranslations("Landing");
+  console.log(employee.phoneNumber,"phone")
 
   const company = employee.companyResponseDto[0];
 
@@ -89,7 +90,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
 
             <div className="mt-6 w-full space-y-3">
               <a
-                href={`https://wa.me/${employee.phoneNumber}`}
+               href={`https://wa.me/${employee.phoneNumber.replace(/\D/g, "")}`}
                 className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
               >
                 <div className="w-10 h-10  rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
