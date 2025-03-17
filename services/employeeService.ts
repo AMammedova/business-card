@@ -16,6 +16,7 @@ export async function fetchEmployee(employeeId: number) {
           accept: "*/*",
           "Accept-Language": locale,
         },
+        timeout: 5000,
       }
     );
 
