@@ -5,10 +5,11 @@ interface Props {
 }
 
 export default function Home({ searchParams }: Props) {
-  const employeeId = searchParams.employeeId;
-  console.log(employeeId, "employeeId");
-  if (employeeId) {
-    redirect(`/profile/${employeeId}`);
+  const id = searchParams.id;
+  console.log(id, "test");
+
+  if (id) {
+    redirect(`/profile/${id}`);
   } else {
     redirect("/profile/9");
   }

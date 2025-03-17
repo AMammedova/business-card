@@ -36,13 +36,15 @@ const getSiteIcon = (url: string) => {
   return "website.png";
 };
 
-const DigitalBusinessCard = () => {
+const DigitalBusinessCard = ({ employeeId }: { employeeId: string }) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getEmployeeById(9);
+      const data = await getEmployeeById(
+        employeeId ? parseInt(employeeId, 10) : 9
+      );
       setEmployee(data);
       setTimeout(() => setIsLoaded(true), 300);
     };
@@ -103,11 +105,12 @@ const DigitalBusinessCard = () => {
             ></div>
           </div>
 
-          {/* Profile picture positioned to overlap the header */}
           <div className="flex flex-col items-center -mt-32 px-8">
             <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105 hover:border-[#EC3237]">
               <img
-                src={employee.pictureUrl}
+                src={
+                  employee.pictureUrl ? employee.pictureUrl : "/defaultman2.png"
+                }
                 alt="Profile"
                 className="w-full h-full object-cover"
               />

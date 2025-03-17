@@ -1,7 +1,9 @@
 import LandingPage from "@/containers/LandingPage";
+interface Props {
+  params: { id: string };
+}
+export default function Page({ params }: Props) {
+  const employeeId = params.id;
 
-const page = () => {
-  return <LandingPage />;
-};
-
-export default page;
+  return <LandingPage employeeId={employeeId} />;
+}
