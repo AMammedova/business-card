@@ -3,97 +3,103 @@
 import React from "react";
 import Image from "next/image";
 import { Employee } from "@/types/employee";
-import { downloadVCard } from "@/utils/vcard";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
+import { downloadVCard } from "@/utils/vcard";
 
 const getSiteIcon = (url: string) => {
-  if (url.includes("instagram")) return "instagram.png";
+  if (url.includes("instagram")) return "instagram.svg";
   if (url.includes("facebook")) return "facebook.png";
   if (url.includes("linkedin")) return "linkedin.png";
-  return "website.png";
+  if (url.includes("tiktok")) return "tiktok.svg";
+  return "web.svg";
+};
+
+const handleShare = async () => {
+  try {
+    if (navigator.share) {
+      await navigator.share({
+        url: window.location.href,
+      });
+    } else {
+      alert("Sharing not supported on this browser.");
+    }
+  } catch (error) {
+    console.error("Error sharing:", error);
+  }
 };
 
 const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const t = useTranslations("Landing");
-  console.log(employee.phoneNumber,"phone")
-
-  const company = employee.companyResponseDto[0];
+  const company = employee.businessCardCompanyResponseDto[0];
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden ">
-      {/* Creative background with animated shapes */}
-      <div className="absolute inset-0 overflow-hidden hidden md:block">
-        <div className="absolute top-0 left-0 w-full h-full">
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500 rounded-full opacity-10 transform -translate-x-16 -translate-y-16"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-orange-500 rounded-full opacity-10 transform translate-x-16 translate-y-24"></div>
-          <div className="absolute top-1/2 left-1/4 w-32 h-32 bg-blue-500 rounded-full opacity-10"></div>
-          <div className="absolute top-1/3 right-1/3 w-24 h-24 bg-green-500 rounded-full opacity-10"></div>
-
-          {/* Pattern overlay */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "url('data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23f97316' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')",
-              backgroundSize: "60px 60px",
-              backgroundRepeat: "repeat",
-              zIndex: 0,
-            }}
-          ></div>
-        </div>
-      </div>
-
-      <div className="w-full max-w-xl mx-auto z-10 transition-all duration-500 p-2 ">
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100">
-          {/* Header section with orange accent */}
-          <div className="relative h-52 bg-[#EC3237] overflow-hidden">
+    <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden">
+      <div className="w-full max-w-xl mx-auto z-10 transition-all duration-500 p-2">
+        <div
+          className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
+          style={{
+            backgroundImage: "url('/Qrpage.svg')",
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            zIndex: 0,
+          }}
+        >
+          {/* Header */}
+          <div className="relative h-52 overflow-hidden">
             <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: "url('/back5.jpg')",
-                backgroundSize: "cover",
-                backgroundRepeat: "no-repeat",
-                zIndex: 0,
-              }}
-            ></div>
+              className="absolute top-4 left-4 cursor-pointer"
+              onClick={handleShare}
+            >
+              <Image src="/share.svg" alt="Share" width={32} height={32} />
+            </div>
             <div className="absolute top-4 right-4">
               <LanguageSwitcher />
             </div>
           </div>
 
+          {/* Profile */}
           <div className="flex flex-col items-center -mt-32 px-8">
-            <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105 hover:border-[#EC3237]">
-              <img
-                src={
-                  employee.pictureUrl ? employee.pictureUrl : "/defaultman2.png"
-                }
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
+            <div className="relative w-48 h-48 group">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#EF2831] to-[#EC3237] animate-spin-slow opacity-70"></div>
+              <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105">
+                <img
+                  src={employee.pictureUrl || "/defaultman2.png"}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
 
-            <h2 className="mt-4 text-2xl font-bold text-gray-800 tracking-tight text-center">
-              {employee.name} {employee.surname}
-            </h2>
-            <p className="mt-1 text-gray-600 text-center">
-              {employee.position}, {company.name}
-            </p>
+            <div className="mt-6 text-center space-y-2">
+              <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
+                {employee.name} {employee.surname}
+              </h2>
+              <p className="text-lg text-gray-600 font-medium">
+                {employee.position}
+              </p>
+            </div>
 
             <button
               onClick={() => downloadVCard(employee, company)}
-              className="mt-4 py-3 px-8 bg-[#EC3237] hover:bg-[#EC3237]/90 text-white rounded-full transition-all duration-300 shadow-lg transform hover:-translate-y-1 font-medium"
+              className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
+              </svg>
               {t("saveToContacts")}
             </button>
 
+            {/* Contact Buttons */}
             <div className="mt-6 w-full space-y-3">
               <a
-               href={`https://wa.me/${employee.phoneNumber.replace(/\D/g, "")}`}
+                href={`https://wa.me/${employee.phoneNumber.replace(
+                  /\D/g,
+                  ""
+                )}`}
                 className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
               >
-                <div className="w-10 h-10  rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
                   <Image
                     src="/whatsup.png"
                     alt="WhatsApp"
@@ -105,22 +111,24 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
                   {t("textViaWhatsApp")}
                 </span>
               </a>
+
               <a
                 href={`tel:+${employee.phoneNumber}`}
                 className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
               >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
                   <Image src="/call.png" alt="Phone" width={20} height={20} />
                 </div>
                 <span className="font-medium text-gray-700 group-hover:text-gray-900">
                   +{employee.phoneNumber}
                 </span>
               </a>
+
               <a
                 href={`mailto:${employee.mail}`}
                 className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
               >
-                <div className="w-10 h-10  rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-300">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
                   <Image src="/mail.png" alt="Email" width={20} height={20} />
                 </div>
                 <span className="font-medium text-gray-700 group-hover:text-gray-900">
@@ -129,62 +137,79 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
               </a>
             </div>
 
-            {/* Company section */}
-            <div className="mt-8 w-full pt-6 border-t border-gray-100">
-              <h2 className="text-xl font-bold text-gray-800 text-center">
-                {company.name}
+            {/* Company Section */}
+            <div className="mt-8 w-full pt-6">
+              <h2 className="text-3xl font-bold text-gray-800 text-center">
+                {company?.name}
               </h2>
               <p className="text-center text-sm text-gray-500 mt-1">
-                {company.slogan}
-              </p>
-              <p className="text-center text-xs text-gray-500 mt-4 mb-2">
-                {company?.info}
+                {company?.slogan}
               </p>
 
-              <p className="text-center text-sm text-blue-500 p-2 cursor-pointer">
-              <span className="text-sm text-gray-800">{t("location")}:</span>{" "}
+              {/* Sub Categories */}
+              <div className="mt-8 grid grid-cols-2 gap-6">
+                {company?.businessCardSubCategoryResponseDto.map(
+                  (subcategory, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                    >
+                      <img
+                        src={subcategory.url.replace(
+                          "https://tend.grandmart.az:6007/Logo/",
+                          ""
+                        )}
+                        alt={subcategory.name}
+                        className="h-20 w-40 object-cover"
+                      />
+                      {/* <h3 className="text-md font-semibold text-gray-700 mt-3 text-center">
+                        {subcategory.name}
+                      </h3> */}
+                      <div className="flex gap-2 mt-2">
+                        {subcategory?.businessCardLogoResponseDtos.map(
+                          (site, idx) => (
+                            <a
+                              key={idx}
+                              href={site.url.replace(
+                                "https://tend.grandmart.az:6007/Site/",
+                                ""
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shadow-md hover:scale-110 hover:shadow-lg"
+                            >
+                              <Image
+                                src={`/${getSiteIcon(site.url)}`}
+                                alt="Site Icon"
+                                width={20}
+                                height={20}
+                              />
+                            </a>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              {/* Location */}
+              <div className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8">
+                <Image
+                  src="/Location.svg"
+                  alt="Location"
+                  width={20}
+                  height={20}
+                />
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    company.location
+                    company?.location
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  {company.location}
+                  {company?.location}
                 </a>
-              </p>
-
-              <div className="flex justify-center items-center gap-4 mb-6">
-                {company.siteResponseDto.map((site, index) => (
-                  <a
-                    key={index}
-                    href={site.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 bg-white rounded-full shadow-md transform transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-gray-50"
-                  >
-                    <Image
-                      src={`/${getSiteIcon(site.url)}`}
-                      alt="Site Icon"
-                      width={28}
-                      height={28}
-                    />
-                  </a>
-                ))}
-              </div>
-              <div className="mt-4 flex justify-center items-center gap-4 p-4 ">
-                {company.logoResponseDto.map((logo, index) => (
-                  <div
-                    key={index}
-                    className="p-2 bg-white rounded-full shadow-md transform transition-all duration-300 hover:scale-110 hover:shadow-lg"
-                  >
-                    <img
-                      src={logo.url}
-                      alt="Company Logo"
-                      className="h-16 w-16 object-contain"
-                    />
-                  </div>
-                ))}
               </div>
             </div>
           </div>

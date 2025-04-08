@@ -1,24 +1,33 @@
 import { CompanyResponseDto, Employee } from "@/types/employee";
 
-export const generateVCard = (employee: Employee, company: CompanyResponseDto): string => {
-    return `BEGIN:VCARD
-  VERSION:3.0
-  N:${employee.surname};${employee.name};;;
-  FN:${employee.name} ${employee.surname}
-  ORG:${company.name}
-  TITLE:${employee.position}
-  ADR;TYPE=WORK:${company.location}
-  TEL;TYPE=WORK,VOICE:${employee.phoneNumber}
-  EMAIL:${employee.mail}
-  ${company.siteResponseDto.map(site => `URL:${site.url}`).join("\n")}
-  END:VCARD`;
-  };
-  
-  export const downloadVCard = (employee: Employee, company: CompanyResponseDto) => {
-    const vCardData = generateVCard(employee, company);
-    const blob = new Blob([vCardData], { type: "text/vcard" });
-    const url = URL.createObjectURL(blob);
-  
+export const generateVCard = (
+  employee: Employee,
+  company: CompanyResponseDto
+): string => {
+  return `BEGIN:VCARD\r\n` +
+         `VERSION:3.0\r\n` +
+         `N:${employee.surname};${employee.name};;;\r\n` +
+         `FN:${employee.name} ${employee.surname}\r\n` +
+         `ORG:${company.name}\r\n` +
+         `TITLE:${employee.position}\r\n` +
+         `ADR;TYPE=WORK:;;${company.location};;;\r\n` +
+         `TEL;TYPE=WORK,VOICE:${employee.phoneNumber.replace(/\D/g, "")}\r\n` +
+         `EMAIL:${employee.mail}\r\n` +
+         `END:VCARD\r\n`;
+};
+
+export const downloadVCard = (
+  employee: Employee,
+  company: CompanyResponseDto
+) => {
+  const vCardData = generateVCard(employee, company);
+  const blob = new Blob([vCardData], { type: "text/x-vcard" });
+  const url = URL.createObjectURL(blob);
+
+  // Mobil cihazlarda birbaşa açmaq üçün:
+  if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    window.location.href = url;
+  } else {
     const a = document.createElement("a");
     a.href = url;
     a.download = `${employee.name}_${employee.surname}.vcf`;
@@ -26,4 +35,5 @@ export const generateVCard = (employee: Employee, company: CompanyResponseDto): 
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }
+};
