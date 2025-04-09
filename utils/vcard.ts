@@ -72,40 +72,40 @@ export const downloadVCard = (
   employee: Employee,
   company: CompanyResponseDto
 ) => {
-  const vCardData = generateVCard(employee, company);
-  const blob = new Blob([vCardData], { type: "text/x-vcard" });
-  const url = URL.createObjectURL(blob);
-
-  // Check if it's a mobile device
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-  if (isMobile) {
+  const tryDirectOpen = () => {
     // For iOS devices
     if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.download = `${employee.name}_${employee.surname}.vcf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } 
-    // For Android devices
-    else if (/Android/i.test(navigator.userAgent)) {
+      const url = `tel:${employee.phoneNumber}`;
       window.location.href = url;
+      return true;
     }
-  } else {
-    // Desktop behavior
+
+    // For Android devices
+    if (/Android/i.test(navigator.userAgent)) {
+      const intent = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${encodeURIComponent(employee.name + ' ' + employee.surname)};S.phone=${encodeURIComponent(employee.phoneNumber)};S.email=${encodeURIComponent(employee.mail)};end`;
+      window.location.href = intent;
+      return true;
+    }
+
+    return false;
+  };
+
+  // Try direct opening first
+  if (!tryDirectOpen()) {
+    // Fallback to vCard download
+    const vCardData = generateVCard(employee, company);
+    const blob = new Blob([vCardData], { type: "text/x-vcard" });
+    const url = URL.createObjectURL(blob);
+
     const link = document.createElement('a');
     link.href = url;
     link.download = `${employee.name}_${employee.surname}.vcf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }
 
-  // Clean up the URL object after a short delay
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 100);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
 };
