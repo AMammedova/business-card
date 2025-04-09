@@ -72,40 +72,47 @@ export const downloadVCard = (
   employee: Employee,
   company: CompanyResponseDto
 ) => {
-  const tryDirectOpen = () => {
-    // For iOS devices
-    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      const url = `tel:${employee.phoneNumber}`;
-      window.location.href = url;
-      return true;
-    }
-
-    // For Android devices
-    if (/Android/i.test(navigator.userAgent)) {
-      const intent = `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/contact;S.name=${encodeURIComponent(employee.name + ' ' + employee.surname)};S.phone=${encodeURIComponent(employee.phoneNumber)};S.email=${encodeURIComponent(employee.mail)};end`;
-      window.location.href = intent;
-      return true;
-    }
-
-    return false;
-  };
-
-  // Try direct opening first
-  if (!tryDirectOpen()) {
-    // Fallback to vCard download
-    const vCardData = generateVCard(employee, company);
-    const blob = new Blob([vCardData], { type: "text/x-vcard" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${employee.name}_${employee.surname}.vcf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
+  // For iOS devices
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    // Use the contact-add URL scheme for iOS
+    const contactInfo = `contact-add://${employee.name}_${employee.surname}?name=${encodeURIComponent(employee.name + ' ' + employee.surname)}&phone=${encodeURIComponent(employee.phoneNumber)}&email=${encodeURIComponent(employee.mail)}`;
+    window.location.href = contactInfo;
+    
+    // Fallback in case the contact-add scheme doesn't work
     setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 100);
+      const vCardData = generateVCard(employee, company);
+      const blob = new Blob([vCardData], { type: "text/x-vcard" });
+      const url = URL.createObjectURL(blob);
+      window.location.href = url;
+      
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 100);
+    }, 500);
+    
+    return;
   }
+
+  // For Android devices
+  if (/Android/i.test(navigator.userAgent)) {
+    const intent = `intent:#Intent;action=android.intent.action.INSERT_OR_EDIT;type=vnd.android.cursor.item/contact;S.name=${encodeURIComponent(employee.name + ' ' + employee.surname)};S.phone=${encodeURIComponent(employee.phoneNumber)};S.email=${encodeURIComponent(employee.mail)};S.company=${encodeURIComponent(company.name)};S.postal=${encodeURIComponent(company.location)};end`;
+    window.location.href = intent;
+    return;
+  }
+
+  // Fallback for desktop or unsupported devices
+  const vCardData = generateVCard(employee, company);
+  const blob = new Blob([vCardData], { type: "text/x-vcard" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${employee.name}_${employee.surname}.vcf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
 };
