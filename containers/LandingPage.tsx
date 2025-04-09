@@ -35,7 +35,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden">
-      <div className="w-full max-w-xl mx-auto z-10 transition-all duration-500 p-2">
+      <div className="w-full max-w-2xl mx-auto z-10 transition-all duration-500 ">
         <div
           className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
           style={{
@@ -53,13 +53,13 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
             >
               <Image src="/share.svg" alt="Share" width={32} height={32} />
             </div>
-            <div className="absolute top-4 right-4">
+            <div className="absolute top-4 right-4 z-10">
               <LanguageSwitcher />
             </div>
           </div>
 
           {/* Profile */}
-          <div className="flex flex-col items-center -mt-32 px-8">
+          <div className="flex flex-col items-center -mt-32 px-2 lg:px-8">
             <div className="relative w-48 h-48 group">
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#EF2831] to-[#EC3237] animate-spin-slow opacity-70"></div>
               <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105">
@@ -84,7 +84,12 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
               onClick={() => downloadVCard(employee, company)}
               className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
                 <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
               </svg>
               {t("saveToContacts")}
@@ -120,7 +125,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
                   <Image src="/call.png" alt="Phone" width={20} height={20} />
                 </div>
                 <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                  +{employee.phoneNumber}
+                  {employee.phoneNumber}
                 </span>
               </a>
 

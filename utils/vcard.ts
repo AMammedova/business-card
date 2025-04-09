@@ -4,6 +4,7 @@ export const generateVCard = (
   employee: Employee,
   company: CompanyResponseDto
 ): string => {
+  console.log("employee", employee);
   return `BEGIN:VCARD\r\n` +
          `VERSION:3.0\r\n` +
          `N:${employee.surname};${employee.name};;;\r\n` +
