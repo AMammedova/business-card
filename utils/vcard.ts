@@ -68,29 +68,44 @@ export const addToContacts = async (
   return false;
 };
 
-export const downloadVCard = async (
+export const downloadVCard = (
   employee: Employee,
   company: CompanyResponseDto
 ) => {
-  // Try to add contact directly first
-  const added = await addToContacts(employee, company);
-  if (added) return;
-
-  // Fall back to vCard download if direct adding fails
   const vCardData = generateVCard(employee, company);
   const blob = new Blob([vCardData], { type: "text/x-vcard" });
   const url = URL.createObjectURL(blob);
 
-  // For mobile devices, try opening directly
-  if (/Android|iPhone|iPad/i.test(navigator.userAgent)) {
-    window.location.href = url;
+  // Check if it's a mobile device
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    // For iOS devices
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.download = `${employee.name}_${employee.surname}.vcf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } 
+    // For Android devices
+    else if (/Android/i.test(navigator.userAgent)) {
+      window.location.href = url;
+    }
   } else {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${employee.name}_${employee.surname}.vcf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // Desktop behavior
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${employee.name}_${employee.surname}.vcf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
+
+  // Clean up the URL object after a short delay
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 100);
 };

@@ -33,37 +33,6 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const t = useTranslations("Landing");
   const company = employee.businessCardCompanyResponseDto[0];
 
-  const handleAddContact = async () => {
-    try {
-      // Check if the Contacts API is supported
-      if ('contacts' in navigator && 'ContactsManager' in window) {
-        const properties = ['name', 'email', 'tel'];
-        const opts = { multiple: false };
-        
-        const contacts = await (navigator.contacts as any).select(properties, opts);
-        
-        const newContact = {
-          name: [`${employee.name} ${employee.surname}`],
-          email: [employee.mail],
-          tel: [`+${employee.phoneNumber}`],
-        };
-
-        await (navigator.contacts as any).save(newContact);
-        
-        // Show success message
-        alert(t("contactAddedSuccessfully"));
-      } else {
-        // Fallback to vCard download for unsupported browsers
-        downloadVCard(employee, company);
-        alert(t("contactsApiNotSupported"));
-      }
-    } catch (error) {
-      console.error('Error adding contact:', error);
-      // Fallback to vCard download
-      downloadVCard(employee, company);
-    }
-  };
-
   return (
     <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden">
       <div className="w-full max-w-2xl mx-auto z-10 transition-all duration-500 ">
@@ -112,7 +81,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
             </div>
 
             <button
-              onClick={handleAddContact}
+              onClick={() => downloadVCard(employee, company)}
               className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
               <svg
