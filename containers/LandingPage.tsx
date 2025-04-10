@@ -5,7 +5,9 @@ import Image from "next/image";
 import { Employee } from "@/types/employee";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
-import { downloadVCard } from "@/utils/vcard";
+import { downloadVCardFromAPI } from "@/utils/vcard";
+import { toast } from "react-toastify";
+
 
 const getSiteIcon = (url: string) => {
   if (url.includes("instagram")) return "instagram.svg";
@@ -32,7 +34,14 @@ const handleShare = async () => {
 const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const t = useTranslations("Landing");
   const company = employee.businessCardCompanyResponseDto[0];
-
+  const handleDownload = async () => {
+    try {
+      await downloadVCardFromAPI(employee.id);
+    } catch (error) {
+      console.error("Error downloading vCard:", error);
+      toast.error("VCard endirilərkən xəta baş verdi!");
+    }
+  };
   return (
     <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden">
       <div className="w-full max-w-2xl mx-auto z-10 transition-all duration-500 ">
@@ -81,7 +90,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
             </div>
 
             <button
-              onClick={() => downloadVCard(employee, company)}
+               onClick={handleDownload}
               className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
               <svg

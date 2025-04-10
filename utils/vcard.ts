@@ -1,53 +1,69 @@
-import { CompanyResponseDto, Employee } from "@/types/employee";
+import { toast } from "react-toastify";
+import axios from "axios";
 
-export const generateVCard = (
-  employee: Employee,
-  company: CompanyResponseDto
-): string => {
-  console.log("employee", employee);
-  return `BEGIN:VCARD\r\n` +
-    `VERSION:3.0\r\n` +
-    `N:${employee.surname};${employee.name};;;\r\n` +
-    `FN:${employee.name} ${employee.surname}\r\n` +
-    `ORG:${company.name}\r\n` +
-    `TITLE:${employee.position}\r\n` +
-    `ADR;TYPE=WORK:;;${company.location};;;\r\n` +
-    `TEL;TYPE=WORK,VOICE:${employee.phoneNumber.replace(/\D/g, "")}\r\n` +
-    `EMAIL:${employee.mail}\r\n` +
-    `END:VCARD\r\n`;
-};
+export const downloadVCardFromAPI = async (employeeId: number) => {
+  try {
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export const downloadVCard = (
-  employee: Employee,
-  company: CompanyResponseDto
-) => {
-  const vCardData = generateVCard(employee, company);
+    const cookieStr = document.cookie;
+    const tokenMatch = cookieStr.match(/token=([^;]+)/);
+    const token = tokenMatch ? tokenMatch[1] : "";
 
-  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!token) {
+      toast.error("Authentication token not found!");
+      return;
+    }
 
-  if (isMobile) {
-    // Mobile: open vCard as data URL to trigger "Add Contact" flow
-    const dataUrl = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vCardData);
-    const link = document.createElement('a');
-    link.href = dataUrl;
-    link.download = `${employee.name}_${employee.surname}.vcf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else {
-    // Desktop: download vCard file normally
-    const blob = new Blob([vCardData], { type: "text/vcard" });
-    const url = URL.createObjectURL(blob);
+    const response = await axios.get(`${API_URL}/qrcodes/get-vcard/${employeeId}`, {
+      headers: {
+        accept: "*/*",
+        Authorization: `Bearer ${token}`,
+      },
+      timeout: 5000,
+    });
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${employee.name}_${employee.surname}.vcf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const vCardText = response.data?.data?.vCardText;
+    if (!vCardText) {
+      toast.error("vCard məlumatı tapılmadı.");
+      return;
+    }
 
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 100);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      const dataUrl = 'data:text/vcard;charset=utf-8,' + encodeURIComponent(vCardText);
+      window.open(dataUrl, "_blank");
+    } else {
+      const blob = new Blob([vCardText], { type: "text/vcard" });
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contact.vcf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 100);
+    }
+
+    toast.success("Əlaqə məlumatları uğurla hazırlandı!");
+
+  } catch (error: any) {
+    console.error("Error downloading vCard:", error);
+
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        toast.error(`Server Error: ${error.response.status}`);
+      } else if (error.request) {
+        toast.error("Server cavab vermədi. Yenidən yoxlayın.");
+      } else {
+        toast.error(`Xəta baş verdi: ${error.message}`);
+      }
+    } else {
+      toast.error("Naməlum xəta baş verdi.");
+    }
   }
 };
