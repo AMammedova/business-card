@@ -5,19 +5,11 @@ export const downloadVCardFromAPI = async (employeeId: number) => {
   try {
     const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-    const cookieStr = document.cookie;
-    const tokenMatch = cookieStr.match(/token=([^;]+)/);
-    const token = tokenMatch ? tokenMatch[1] : "";
-
-    if (!token) {
-      toast.error("Authentication token not found!");
-      return;
-    }
 
     const response = await axios.get(`${API_URL}/qrcodes/get-vcard/${employeeId}`, {
       headers: {
         accept: "*/*",
-        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
       },
       timeout: 5000,
     });
