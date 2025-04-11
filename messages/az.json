@@ -8,6 +8,8 @@
     "textViaWhatsApp": "WhatsApp ilə yaz",
     "call": "Zəng et",
     "email": "E-poçt",
-    "location": "Məkan"
+    "location": "Məkan",
+    "success":"Əlaqə kartı uğurla yükləndi!",
+    "error":"Xəta baş verdi!"
   }
 }

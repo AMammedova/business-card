@@ -5,7 +5,8 @@ import Image from "next/image";
 import { Employee } from "@/types/employee";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
-import { downloadVCard } from "@/utils/vcard";
+import { downloadVCardFromBackend } from "@/utils/vcard";
+
 
 const getSiteIcon = (url: string) => {
   if (url.includes("instagram")) return "instagram.svg";
@@ -28,6 +29,8 @@ const handleShare = async () => {
     console.error("Error sharing:", error);
   }
 };
+
+
 
 const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const t = useTranslations("Landing");
@@ -81,7 +84,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
             </div>
 
             <button
-              onClick={() => downloadVCard(employee, company)}
+              onClick={() => downloadVCardFromBackend(employee.id, t("success"), t("error"))}
               className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
               <svg

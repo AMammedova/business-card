@@ -8,6 +8,8 @@
     "textViaWhatsApp": "Text via WhatsApp",
     "call": "Call",
     "email": "Email",
-    "location": "Location"
+    "location": "Location",
+    "success":"Contact card downloaded successfully!",
+    "error":"An error occurred!"
   }
 }
