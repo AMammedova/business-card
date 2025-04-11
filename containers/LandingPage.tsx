@@ -160,11 +160,8 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
                       className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                     >
                       <img
-                        src={subcategory.url.replace(
-                          "https://tend.grandmart.az:6007/Logo/",
-                          ""
-                        )}
-                        alt={subcategory.name}
+                        src={subcategory?.url}
+                        alt={subcategory?.name}
                         className="h-20 w-40 object-cover"
                       />
                       {/* <h3 className="text-md font-semibold text-gray-700 mt-3 text-center">
