@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Employee } from "@/types/employee";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -30,14 +30,70 @@ const handleShare = async () => {
   }
 };
 
+const parseLocation = (locationStr: string) => {
+  const [addressPart, latitudePart, longitudePart] = locationStr.split(" / ");
+  const latitude = parseFloat(latitudePart?.replace("Latitude:", "").trim());
+  const longitude = parseFloat(longitudePart?.replace("Longitude:", "").trim());
 
+  return {
+    address: addressPart,
+    latitude,
+    longitude,
+  };
+};
 
 const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const t = useTranslations("Landing");
   const company = employee.businessCardCompanyResponseDto[0];
+  const locationData = company?.location
+    ? parseLocation(company.location)
+    : null;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  
+  
+  const openMap = (app: "google" | "waze" | "bolt") => {
+    if (!locationData) return;
+    const { latitude, longitude } = locationData;
+  
+    let url = "";
+  
+    if (app === "google") {
+      url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+      window.open(url, "_blank");
+    } 
+    else if (app === "waze") {
+      url = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
+      window.open(url, "_blank");
+    } 
+    else if (app === "bolt") {
+      const boltAppUrl = `bolt://open?pickup[latitude]=${latitude}&pickup[longitude]=${longitude}`;
+      const fallbackUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+  
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  
+      if (isMobile) {
+        // Mobil telefondadırsa Bolt app açmağa çalış
+        const timeout = setTimeout(() => {
+          window.open(fallbackUrl, "_blank");
+        }, 1500); // 1.5 saniyə sonra fallback
+  
+        window.location.href = boltAppUrl;
+  
+        window.addEventListener('blur', () => {
+          clearTimeout(timeout);
+        });
+      } else {
+        // Desktopda Bolt yoxdur, birbaşa Google Maps aç
+        window.open(fallbackUrl, "_blank");
+      }
+    }
+  };
+  
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden">
+
       <div className="w-full max-w-2xl mx-auto z-10 transition-all duration-500 ">
         <div
           className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
@@ -84,7 +140,9 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
             </div>
 
             <button
-              onClick={() => downloadVCardFromBackend(employee.id, t("success"), t("error"))}
+              onClick={() =>
+                downloadVCardFromBackend(employee.id, t("success"), t("error"))
+              }
               className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
               <svg
@@ -199,7 +257,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
               </div>
 
               {/* Location */}
-              <div className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8">
+              {/* <div className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8">
                 <Image
                   src="/Location.svg"
                   alt="Location"
@@ -215,11 +273,57 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
                 >
                   {company?.location}
                 </a>
+              </div> */}
+              <div
+                onClick={() => setIsModalOpen(true)}
+                className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8"
+              >
+                <Image
+                  src="/Location.svg"
+                  alt="Location"
+                  width={20}
+                  height={20}
+                />
+                <span>{locationData?.address}</span>{" "}
+                {/* YALNIZ address göstəririk */}
               </div>
             </div>
           </div>
         </div>
       </div>
+      {isModalOpen && locationData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-80 flex flex-col gap-4">
+            <h3 className="text-xl font-bold text-center">
+              Open Location With
+            </h3>
+            <button
+              onClick={() => openMap("google")}
+              className="py-2 px-4 bg-blue-500 text-white rounded-lg"
+            >
+              Google Maps
+            </button>
+            <button
+              onClick={() => openMap("waze")}
+              className="py-2 px-4 bg-green-500 text-white rounded-lg"
+            >
+              Waze
+            </button>
+            <button
+              onClick={() => openMap("bolt")}
+              className="py-2 px-4 bg-yellow-500 text-white rounded-lg"
+            >
+              Bolt
+            </button>
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="py-2 px-4 bg-gray-300 rounded-lg"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

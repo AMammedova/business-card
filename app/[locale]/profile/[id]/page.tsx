@@ -1,31 +1,45 @@
 
-"use client";
+import PageClient from "@/containers/PageClient";
+import { fetchEmployee } from "@/services/employeeService";
+import type { Metadata } from "next";
 
-import React from "react";
-import LandingPage from "@/containers/LandingPage";
-import Loading from "@/components/Loading";
-import ErrorComponent from "@/components/Error";
-import NotFound from "@/components/NotFound";
-import useEmployee from "@/hooks/useEmployee";
 
 interface Props {
   params: { id: string };
 }
 
-export default function Page({ params }: Props) {
-  const { employee, loading, error } = useEmployee(Number(params.id));
-
-  if (loading) {
-    return <Loading />;
-  }
-
-  if (error) {
-    return <ErrorComponent />;
-  }
+// 🔥 1. Server Side Metadata
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const employee = await fetchEmployee(Number(params.id));
 
   if (!employee) {
-    return <NotFound />;
+    return {
+      title: "Digital Business Card",
+      description: "Create and Share Your Digital Business Card",
+      icons: [{ rel: "icon", url: "/favicon.ico" }],
+    };
   }
 
-  return <LandingPage employee={employee} />;
+  const pictureUrl = employee.pictureUrl?.startsWith('https')
+    ? `${employee.pictureUrl}?v=${Date.now()}`
+    : "/favicon.ico";
+
+  return {
+    title: `${employee.name} ${employee.surname}`,
+    description: `Contact ${employee.name} ${employee.surname} via Digital Business Card`,
+    icons: [
+      {
+        rel: "icon",
+        url: pictureUrl,
+        type: "image/png",
+      },
+    ],
+  };
+}
+
+
+
+// 🔥 2. Server Component (just call Client Component inside)
+export default function Page({ params }: Props) {
+  return <PageClient id={params.id} />;
 }
