@@ -16,17 +16,33 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     return {
       title: "Digital Business Card",
       description: "Create and Share Your Digital Business Card",
-      icons: [{ rel: "icon", url: "/favicon.ico" }],
+      openGraph: {
+        title: "Digital Business Card",
+        description: "Create and Share Your Digital Business Card",
+        images: ["/favicon.ico"], // default image
+      },
     };
   }
 
   const pictureUrl = employee.pictureUrl?.startsWith('https')
-    ? `${employee.pictureUrl}?v=${Date.now()}`
+    ? `${employee.pictureUrl}`
     : "/favicon.ico";
 
   return {
     title: `${employee.name} ${employee.surname}`,
     description: `Contact ${employee.name} ${employee.surname} via Digital Business Card`,
+    openGraph: {
+      title: `${employee.name} ${employee.surname}`,
+      description: `Contact ${employee.name} ${employee.surname} via Digital Business Card`,
+      images: [
+        {
+          url: pictureUrl,
+          width: 800,
+          height: 600,
+          alt: `${employee.name} ${employee.surname}`,
+        },
+      ],
+    },
     icons: [
       {
         rel: "icon",
@@ -36,7 +52,6 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     ],
   };
 }
-
 
 
 // 🔥 2. Server Component (just call Client Component inside)
