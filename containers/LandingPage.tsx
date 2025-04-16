@@ -6,7 +6,7 @@ import { Employee } from "@/types/employee";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
 import { downloadVCardFromBackend } from "@/utils/vcard";
-
+import { toast } from "react-toastify";
 
 const getSiteIcon = (url: string) => {
   if (url.includes("instagram")) return "instagram.svg";
@@ -23,7 +23,7 @@ const handleShare = async () => {
         url: window.location.href,
       });
     } else {
-      alert("Sharing not supported on this browser.");
+      toast.info("Sharing not supported on this browser.");
     }
   } catch (error) {
     console.error("Error sharing:", error);
@@ -48,63 +48,100 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const locationData = company?.location
     ? parseLocation(company.location)
     : null;
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  
-  const openMap = (app: "google" | "waze" | "bolt") => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [availableApps, setAvailableApps] = useState<string[]>(["google"]);
+
+  const openMap = (app: "google" | "waze" | "bolt" | "apple") => {
     if (!locationData) return;
     const { latitude, longitude } = locationData;
-  
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const showAppNotFoundPopup = () =>
+      toast.info("Tətbiq tapılmadı və açmaq mümkün olmadı.");
+
     if (app === "google") {
       const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
       window.open(url, "_blank");
-    }
-  
-    else if (app === "waze") {
-      const wazeAppUrl = `waze://?ll=${latitude},${longitude}&navigate=yes`;
-      const fallbackUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
-  
-      if (isMobile) {
-        const timeout = setTimeout(() => {
-          window.open(fallbackUrl, "_blank");
-        }, 1500);
-  
-        window.location.href = wazeAppUrl;
-  
-        window.addEventListener("blur", () => {
-          clearTimeout(timeout); // app açılıbsa fallback etmə
-        });
+    } else if (app === "apple") {
+      if (isIOS) {
+        const url = `http://maps.apple.com/?ll=${latitude},${longitude}`;
+        window.open(url, "_blank");
       } else {
-        window.open(fallbackUrl, "_blank");
+        toast.info(
+          "Apple Maps yalnız iPhone/iPad cihazlarında istifadə oluna bilər."
+        );
       }
-    }
-  
-    else if (app === "bolt") {
-      const boltAppUrl = `bolt://ride?pickup[latitude]=${latitude}&pickup[longitude]=${longitude}&destination[latitude]=${latitude}&destination[longitude]=${longitude}`;
-      const fallbackUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-  
+    } else if (app === "waze") {
+      const url = `waze://?ll=${latitude},${longitude}&navigate=yes`;
       if (isMobile) {
-        const timeout = setTimeout(() => {
-          window.open(fallbackUrl, "_blank");
-        }, 1500);
-  
-        window.location.href = boltAppUrl;
-  
-        window.addEventListener("blur", () => {
-          clearTimeout(timeout);
-        });
+        const timeout = setTimeout(showAppNotFoundPopup, 1200);
+        window.location.href = url;
+        window.addEventListener("blur", () => clearTimeout(timeout));
       } else {
-        window.open(fallbackUrl, "_blank");
+        showAppNotFoundPopup();
+      }
+    } else if (app === "bolt") {
+      const url = `bolt://ride?pickup[latitude]=${latitude}&pickup[longitude]=${longitude}`;
+      if (isMobile) {
+        const timeout = setTimeout(showAppNotFoundPopup, 1200);
+        window.location.href = url;
+        window.addEventListener("blur", () => clearTimeout(timeout));
+      } else {
+        showAppNotFoundPopup();
       }
     }
   };
+
+  const testAppAvailability = (
+    app: "waze" | "bolt" | "apple",
+    cb: (available: boolean) => void
+  ) => {
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   
+    if (app === "apple") {
+      // Apple Maps is available only on iOS devices
+      cb(isIOS);
+    } else if (app === "waze" || app === "bolt") {
+      // Waze and Bolt are assumed available on mobile devices
+      // Since deep link testing is unreliable, we assume they're available if on mobile
+      cb(isMobile);
+    } else {
+      cb(false);
+    }
+  };
+
+  
+  const handleOpenLocationModal = () => {
+    const apps: ("waze" | "bolt" | "apple")[] = ["waze", "bolt", "apple"];
+    const available: string[] = ["google"]; // Google Maps is always available
+  
+    // Check each app asynchronously and collect results
+    Promise.all(
+      apps.map(
+        (app) =>
+          new Promise<string | null>((resolve) => {
+            testAppAvailability(app, (isAvailable) => {
+              resolve(isAvailable ? app : null);
+            });
+          })
+      )
+    ).then((results) => {
+      // Filter out null results and add available apps
+      results.forEach((app) => {
+        if (app) available.push(app);
+      });
+      setAvailableApps(available);
+      setIsModalOpen(true);
+    });
+  };
+
+
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden">
-
       <div className="w-full max-w-2xl mx-auto z-10 transition-all duration-500 ">
         <div
           className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
@@ -267,26 +304,8 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
                 )}
               </div>
 
-              {/* Location */}
-              {/* <div className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8">
-                <Image
-                  src="/Location.svg"
-                  alt="Location"
-                  width={20}
-                  height={20}
-                />
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    company?.location
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {company?.location}
-                </a>
-              </div> */}
               <div
-                onClick={() => setIsModalOpen(true)}
+                onClick={handleOpenLocationModal}
                 className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8"
               >
                 <Image
@@ -295,8 +314,7 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
                   width={20}
                   height={20}
                 />
-                <span>{locationData?.address}</span>{" "}
-                {/* YALNIZ address göstəririk */}
+                <span>{locationData?.address}</span>
               </div>
             </div>
           </div>
@@ -304,33 +322,73 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
       </div>
       {isModalOpen && locationData && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-80 flex flex-col gap-4">
-            <h3 className="text-xl font-bold text-center">
-              Open Location With
+          <div className="bg-white rounded-2xl px-6 pt-6 pb-4 w-80 shadow-lg text-center">
+            <h3 className="text-base font-medium text-gray-800 mb-4">
+              Açmaq ücün tətbiqi seçin:
             </h3>
-            <button
-              onClick={() => openMap("google")}
-              className="py-2 px-4 bg-blue-500 text-white rounded-lg"
-            >
-              Google Maps
-            </button>
-            <button
-              onClick={() => openMap("waze")}
-              className="py-2 px-4 bg-green-500 text-white rounded-lg"
-            >
-              Waze
-            </button>
-            <button
-              onClick={() => openMap("bolt")}
-              className="py-2 px-4 bg-yellow-500 text-white rounded-lg"
-            >
-              Bolt
-            </button>
+            <div className="flex justify-around items-center mb-4">
+              {availableApps.includes("bolt") && (
+                <button
+                  onClick={() => openMap("bolt")}
+                  className="flex flex-col items-center hover:scale-105 transition"
+                >
+                  <Image
+                    src="/bolt-icon.png"
+                    alt="Bolt"
+                    width={48}
+                    height={48}
+                  />
+                  <span className="text-xs mt-1 text-gray-700">Bolt</span>
+                </button>
+              )}
+              {availableApps.includes("waze") && (
+                <button
+                  onClick={() => openMap("waze")}
+                  className="flex flex-col items-center hover:scale-105 transition"
+                >
+                  <Image
+                    src="/waze-icon.png"
+                    alt="Waze"
+                    width={48}
+                    height={48}
+                  />
+                  <span className="text-xs mt-1 text-gray-700">Waze</span>
+                </button>
+              )}
+              {availableApps.includes("google") && (
+                <button
+                  onClick={() => openMap("google")}
+                  className="flex flex-col items-center hover:scale-105 transition"
+                >
+                  <Image
+                    src="/google-map.png"
+                    alt="Google Maps"
+                    width={48}
+                    height={48}
+                  />
+                  <span className="text-xs mt-1 text-gray-700">Google</span>
+                </button>
+              )}
+              {availableApps.includes("apple") && (
+                <button
+                  onClick={() => openMap("apple")}
+                  className="flex flex-col items-center hover:scale-105 transition"
+                >
+                  <Image
+                    src="/apple-map.png"
+                    alt="Apple Maps"
+                    width={48}
+                    height={48}
+                  />
+                  <span className="text-xs mt-1 text-gray-700">Apple</span>
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setIsModalOpen(false)}
-              className="py-2 px-4 bg-gray-300 rounded-lg"
+              className="w-full py-2 text-sm text-gray-700 border-t border-gray-200 rounded-b-lg"
             >
-              Cancel
+              Ləğv et
             </button>
           </div>
         </div>
