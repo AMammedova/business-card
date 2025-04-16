@@ -51,40 +51,51 @@ const DigitalBusinessCard = ({ employee }: { employee: Employee }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   
-  
   const openMap = (app: "google" | "waze" | "bolt") => {
     if (!locationData) return;
     const { latitude, longitude } = locationData;
   
-    let url = "";
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   
     if (app === "google") {
-      url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+      const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
       window.open(url, "_blank");
-    } 
-    else if (app === "waze") {
-      url = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
-      window.open(url, "_blank");
-    } 
-    else if (app === "bolt") {
-      const boltAppUrl = `bolt://open?pickup[latitude]=${latitude}&pickup[longitude]=${longitude}`;
-      const fallbackUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    }
   
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    else if (app === "waze") {
+      const wazeAppUrl = `waze://?ll=${latitude},${longitude}&navigate=yes`;
+      const fallbackUrl = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
   
       if (isMobile) {
-        // Mobil telefondadırsa Bolt app açmağa çalış
         const timeout = setTimeout(() => {
           window.open(fallbackUrl, "_blank");
-        }, 1500); // 1.5 saniyə sonra fallback
+        }, 1500);
+  
+        window.location.href = wazeAppUrl;
+  
+        window.addEventListener("blur", () => {
+          clearTimeout(timeout); // app açılıbsa fallback etmə
+        });
+      } else {
+        window.open(fallbackUrl, "_blank");
+      }
+    }
+  
+    else if (app === "bolt") {
+      const boltAppUrl = `bolt://ride?pickup[latitude]=${latitude}&pickup[longitude]=${longitude}&destination[latitude]=${latitude}&destination[longitude]=${longitude}`;
+      const fallbackUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+  
+      if (isMobile) {
+        const timeout = setTimeout(() => {
+          window.open(fallbackUrl, "_blank");
+        }, 1500);
   
         window.location.href = boltAppUrl;
   
-        window.addEventListener('blur', () => {
+        window.addEventListener("blur", () => {
           clearTimeout(timeout);
         });
       } else {
-        // Desktopda Bolt yoxdur, birbaşa Google Maps aç
         window.open(fallbackUrl, "_blank");
       }
     }
