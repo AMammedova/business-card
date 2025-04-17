@@ -7,6 +7,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
 import { downloadVCardFromBackend } from "@/utils/vcard";
 import { toast } from "react-toastify";
+import { isAndroid, isIOS } from 'react-device-detect';
 
 type MapAppId = "google" | "waze" | "bolt" | "apple";
 
@@ -35,6 +36,41 @@ const handleShare = async () => {
     }
   } catch (error) {
     console.error("Error sharing:", error);
+  }
+};
+
+const openBoltApp = (pickupLat, pickupLng, destinationLat, destinationLng, destinationAddress) => {
+  try {
+    // Format addresses
+    const encodedDestAddress = encodeURIComponent(destinationAddress || '');
+    
+    // Device detection (react-device-detect əvəzinə native detection)
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    let url = '';
+
+    if (isAndroid) {
+      // Android üçün Intent URL formatı
+      url = `intent://ride?pickup_lat=${pickupLat}&pickup_lng=${pickupLng}&destination_lat=${destinationLat}&destination_lng=${destinationLng}#Intent;scheme=bolt;package=ee.mtakso.client;end;`;
+    } else if (isIOS) {
+      // iOS üçün URL sxemi
+      url = `bolt://ride?pickup_lat=${pickupLat}&pickup_lng=${pickupLng}&destination_lat=${destinationLat}&destination_lng=${destinationLng}&destination_address=${encodedDestAddress}`;
+    } else {
+      // Veb versiyası üçün
+      url = `https://bolt.eu`;
+    }
+
+    console.log("Opening Bolt URL:", url);
+    
+    // Tətbiqi açmağa cəhd edin
+    window.location.href = url;
+    
+    // Timeout ilə tamamlayın
+    return true;
+  } catch (error) {
+    console.error("Error opening Bolt app:", error);
+    return false;
   }
 };
 
@@ -147,16 +183,34 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
 
   const availableApps: MapAppConfig[] = useMemo(
     () => [
-      { id: "google" as MapAppId, label: t("googleMaps"), icon: "/google-map.png" },
+      {
+        id: "google" as MapAppId,
+        label: t("googleMaps"),
+        icon: "/google-map.png",
+      },
       ...(isMobile
         ? [
-            { id: "waze" as MapAppId, label: t("waze"), icon: "/waze-icon.png" },
-            { id: "bolt" as MapAppId, label: t("bolt"), icon: "/bolt-icon.png" },
+            {
+              id: "waze" as MapAppId,
+              label: t("waze"),
+              icon: "/waze-icon.png",
+            },
+            {
+              id: "bolt" as MapAppId,
+              label: t("bolt"),
+              icon: "/bolt-icon.png",
+            },
           ]
         : []),
-      ...(isIOS
-        ? [{ id: "apple" as MapAppId, label: t("appleMaps"), icon: "/apple-map.png" }]
-        : []),
+      // ...(isIOS
+      //   ? [
+      //       {
+      //         id: "apple" as MapAppId,
+      //         label: t("appleMaps"),
+      //         icon: "/apple-map.png",
+      //       },
+      //     ]
+      //   : []),
     ],
     [isMobile, isIOS]
   );
@@ -189,9 +243,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
               "_blank"
             );
           } else {
-            toast.info(
-           t("appleOnly")
-            );
+            toast.info(t("appleOnly"));
           }
           done();
           break;
@@ -209,44 +261,98 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
           break;
 
           case "bolt":
-            // Get current location first
-            navigator.geolocation.getCurrentPosition(
-              ({ coords }) => {
-                const pickLat = coords.latitude;
-                const pickLon = coords.longitude;
-                
-                // Different URL formats for iOS and Android
-                let boltAppUrl;
-                
-                if (isIOS) {
-                  // iOS deep link format
-                  boltAppUrl = `bolt://ride?pickup_lat=${pickLat}&pickup_lng=${pickLon}&pickup_address=My%20Location&destination_lat=${latitude}&destination_lng=${longitude}&destination_address=${encodeURIComponent(locationData.address)}`;
-                } else {
-                  // Android deep link format
-                  boltAppUrl = `bolt://ride?pickup_lat=${pickLat}&pickup_lng=${pickLon}&destination_lat=${latitude}&destination_lng=${longitude}`;
-                }
-                
-                // Open Bolt app
-                const boltWindow = window.open(boltAppUrl, '_blank');
-                
-                // Fallback to web version if app isn't installed
-                setTimeout(() => {
-                  // Check if new window was blocked or failed to navigate
-                  if (!boltWindow || boltWindow.closed || boltWindow.closed === undefined) {
-                    toast.info(t("boltNotFound"));
-                    window.open("https://bolt.eu/download", "_blank");
-                  }
-                  done();
-                }, 2000);
-              },
-              () => {
-                toast.error(t("locationError"));
+            // Əvvəlcə istifadəçinin mövqeyini bilmirik halı
+            if (!locationData) {
+              toast.error(t("noCoordinates"));
+              done();
+              break;
+            }
+            
+            setLoadingApp("bolt");
+            
+            // Geolocation options
+            const geoOptions = {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0
+            };
+            
+            // Alternate approach: Try direct deep link if geolocation fails
+            const openBoltWithoutLocation = () => {
+              // Destination coordinates from locationData
+              const { latitude: destLat, longitude: destLng, address: destAddress } = locationData;
+              
+              // Direct deep link without pickup coordinates
+              const directUrl = `bolt://ride?destination_lat=${destLat}&destination_lng=${destLng}&destination_address=${encodeURIComponent(destAddress)}`;
+              
+              window.location.href = directUrl;
+              console.log("Trying direct Bolt link:", directUrl);
+              
+              setTimeout(() => {
+                // Fallback to web
+                window.open("https://bolt.eu", "_blank");
                 done();
-              },
-              { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-            );
+              }, 2000);
+            };
+            
+            // Try to get user location with proper error handling
+            try {
+              navigator.geolocation.getCurrentPosition(
+                ({ coords }) => {
+                  // Success! We have user's location
+                  const { latitude: destLat, longitude: destLng, address: destAddress } = locationData;
+                  
+                  // Try to open Bolt app
+                  const success = openBoltApp(
+                    coords.latitude, 
+                    coords.longitude, 
+                    destLat, 
+                    destLng,
+                    destAddress
+                  );
+                  
+                  // Clear loading state after delay
+                  setTimeout(() => {
+                    done();
+                  }, 2000);
+                },
+                (error) => {
+                  // Handle specific geolocation errors
+                  console.error("Geolocation error:", error);
+                  
+                  switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                      toast.error(t("locationPermissionDenied") || "Location permission denied");
+                      // Try without location
+                      openBoltWithoutLocation();
+                      break;
+                    case error.POSITION_UNAVAILABLE:
+                      toast.error(t("locationUnavailable") || "Location information unavailable");
+                      openBoltWithoutLocation();
+                      break;
+                    case error.TIMEOUT:
+                      toast.error(t("locationTimeout") || "Location request timed out");
+                      openBoltWithoutLocation();
+                      break;
+                    default:
+                      toast.error(t("locationError") || "Unknown error getting location");
+                      openBoltWithoutLocation();
+                  }
+                  
+                  // Clear loading state
+                  done();
+                },
+                geoOptions
+              );
+            } catch (error) {
+              // Catch any unexpected errors with the Geolocation API itself
+              console.error("Unexpected geolocation error:", error);
+              toast.error(t("geolocationNotSupported") || "Geolocation not supported");
+              openBoltWithoutLocation();
+              done();
+            }
             break;
-        default:
+            default:
           done();
       }
     },
@@ -255,186 +361,186 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-white relative overflow-hidden">
-    <div className="w-full max-w-2xl mx-auto z-10 transition-all duration-500 ">
-      <div
-        className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
-        style={{
-          backgroundImage: "url('/QrPage.svg')",
-          backgroundSize: "cover",
-          backgroundRepeat: "no-repeat",
-          zIndex: 0,
-        }}
-      >
-        {/* Header */}
-        <div className="relative h-52 overflow-hidden">
-          <div
-            className="absolute top-4 left-4 cursor-pointer"
-            onClick={handleShare}
-          >
-            <Image src="/share.svg" alt="Share" width={32} height={32} />
-          </div>
-          <div className="absolute top-4 right-4 z-10">
-            <LanguageSwitcher />
-          </div>
-        </div>
-
-        {/* Profile */}
-        <div className="flex flex-col items-center -mt-32 px-2 lg:px-8">
-          <div className="relative w-48 h-48 group">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#EF2831] to-[#EC3237] animate-spin-slow opacity-70"></div>
-            <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105">
-              <img
-                src={employee.pictureUrl || "/defaultman2.png"}
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
+      <div className="w-full max-w-2xl mx-auto z-10 transition-all duration-500 ">
+        <div
+          className="bg-white rounded-3xl shadow-2xl overflow-hidden border border-gray-100"
+          style={{
+            backgroundImage: "url('/QrPage.svg')",
+            backgroundSize: "cover",
+            backgroundRepeat: "no-repeat",
+            zIndex: 0,
+          }}
+        >
+          {/* Header */}
+          <div className="relative h-52 overflow-hidden">
+            <div
+              className="absolute top-4 left-4 cursor-pointer"
+              onClick={handleShare}
+            >
+              <Image src="/share.svg" alt="Share" width={32} height={32} />
+            </div>
+            <div className="absolute top-4 right-4 z-10">
+              <LanguageSwitcher />
             </div>
           </div>
 
-          <div className="mt-6 text-center space-y-2">
-            <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
-              {employee.name} {employee.surname}
-            </h2>
-            <p className="text-lg text-gray-600 font-medium">
-              {employee.position}
-            </p>
-          </div>
+          {/* Profile */}
+          <div className="flex flex-col items-center -mt-32 px-2 lg:px-8">
+            <div className="relative w-48 h-48 group">
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#EF2831] to-[#EC3237] animate-spin-slow opacity-70"></div>
+              <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105">
+                <img
+                  src={employee.pictureUrl || "/defaultman2.png"}
+                  alt="Profile"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
 
-          <button
-            onClick={() =>
-              downloadVCardFromBackend(employee.id, t("success"), t("error"))
-            }
-            className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
-            </svg>
-            {t("saveToContacts")}
-          </button>
+            <div className="mt-6 text-center space-y-2">
+              <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
+                {employee.name} {employee.surname}
+              </h2>
+              <p className="text-lg text-gray-600 font-medium">
+                {employee.position}
+              </p>
+            </div>
 
-          {/* Contact Buttons */}
-          <div className="mt-6 w-full space-y-3">
-            <a
-              href={`https://wa.me/${employee.phoneNumber.replace(
-                /\D/g,
-                ""
-              )}`}
-              className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
+            <button
+              onClick={() =>
+                downloadVCardFromBackend(employee.id, t("success"), t("error"))
+              }
+              className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
+              </svg>
+              {t("saveToContacts")}
+            </button>
+
+            {/* Contact Buttons */}
+            <div className="mt-6 w-full space-y-3">
+              <a
+                href={`https://wa.me/${employee.phoneNumber.replace(
+                  /\D/g,
+                  ""
+                )}`}
+                className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
+                  <Image
+                    src="/whatsup.png"
+                    alt="WhatsApp"
+                    width={20}
+                    height={20}
+                  />
+                </div>
+                <span className="font-medium text-gray-700 group-hover:text-gray-900">
+                  {t("textViaWhatsApp")}
+                </span>
+              </a>
+
+              <a
+                href={`tel:+${employee.phoneNumber}`}
+                className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
+                  <Image src="/call.png" alt="Phone" width={20} height={20} />
+                </div>
+                <span className="font-medium text-gray-700 group-hover:text-gray-900">
+                  {employee.phoneNumber}
+                </span>
+              </a>
+
+              <a
+                href={`mailto:${employee.mail}`}
+                className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
+                  <Image src="/mail.png" alt="Email" width={20} height={20} />
+                </div>
+                <span className="font-medium text-gray-700 group-hover:text-gray-900">
+                  {employee.mail}
+                </span>
+              </a>
+            </div>
+
+            {/* Company Section */}
+            <div className="mt-8 w-full pt-6">
+              <h2 className="text-3xl font-bold text-gray-800 text-center">
+                {company?.name}
+              </h2>
+              <p className="text-center text-sm text-gray-500 mt-1">
+                {company?.slogan}
+              </p>
+
+              {/* Sub Categories */}
+              <div className="mt-8 grid grid-cols-2 gap-6">
+                {company?.businessCardSubCategoryResponseDto.map(
+                  (subcategory, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                    >
+                      <img
+                        src={subcategory?.url}
+                        alt={subcategory?.name}
+                        className="h-20 w-40 object-cover"
+                      />
+                      {/* <h3 className="text-md font-semibold text-gray-700 mt-3 text-center">
+          {subcategory.name}
+        </h3> */}
+                      <div className="flex gap-2 mt-2">
+                        {subcategory?.businessCardLogoResponseDtos.map(
+                          (site, idx) => (
+                            <a
+                              key={idx}
+                              href={site.url.replace(
+                                "https://tend.grandmart.az:6007/Site/",
+                                ""
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shadow-md hover:scale-110 hover:shadow-lg"
+                            >
+                              <Image
+                                src={`/${getSiteIcon(site.url)}`}
+                                alt="Site Icon"
+                                width={20}
+                                height={20}
+                              />
+                            </a>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+
+              <div
+                onClick={() => setIsModalOpen(true)}
+                className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8"
+              >
                 <Image
-                  src="/whatsup.png"
-                  alt="WhatsApp"
+                  src="/Location.svg"
+                  alt="Location"
                   width={20}
                   height={20}
                 />
+                <span>{locationData?.address}</span>{" "}
+                {/* YALNIZ address göstəririk */}
               </div>
-              <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                {t("textViaWhatsApp")}
-              </span>
-            </a>
-
-            <a
-              href={`tel:+${employee.phoneNumber}`}
-              className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
-                <Image src="/call.png" alt="Phone" width={20} height={20} />
-              </div>
-              <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                {employee.phoneNumber}
-              </span>
-            </a>
-
-            <a
-              href={`mailto:${employee.mail}`}
-              className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
-            >
-              <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
-                <Image src="/mail.png" alt="Email" width={20} height={20} />
-              </div>
-              <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                {employee.mail}
-              </span>
-            </a>
-          </div>
-
-          {/* Company Section */}
-          <div className="mt-8 w-full pt-6">
-            <h2 className="text-3xl font-bold text-gray-800 text-center">
-              {company?.name}
-            </h2>
-            <p className="text-center text-sm text-gray-500 mt-1">
-              {company?.slogan}
-            </p>
-
-            {/* Sub Categories */}
-            <div className="mt-8 grid grid-cols-2 gap-6">
-              {company?.businessCardSubCategoryResponseDto.map(
-                (subcategory, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col items-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-                  >
-                    <img
-                      src={subcategory?.url}
-                      alt={subcategory?.name}
-                      className="h-20 w-40 object-cover"
-                    />
-                    {/* <h3 className="text-md font-semibold text-gray-700 mt-3 text-center">
-          {subcategory.name}
-        </h3> */}
-                    <div className="flex gap-2 mt-2">
-                      {subcategory?.businessCardLogoResponseDtos.map(
-                        (site, idx) => (
-                          <a
-                            key={idx}
-                            href={site.url.replace(
-                              "https://tend.grandmart.az:6007/Site/",
-                              ""
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shadow-md hover:scale-110 hover:shadow-lg"
-                          >
-                            <Image
-                              src={`/${getSiteIcon(site.url)}`}
-                              alt="Site Icon"
-                              width={20}
-                              height={20}
-                            />
-                          </a>
-                        )
-                      )}
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-
-            <div
-              onClick={() => setIsModalOpen(true)}
-              className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8"
-            >
-              <Image
-                src="/Location.svg"
-                alt="Location"
-                width={20}
-                height={20}
-              />
-              <span>{locationData?.address}</span>{" "}
-              {/* YALNIZ address göstəririk */}
             </div>
           </div>
         </div>
       </div>
-    </div>
-    {isModalOpen && locationData && (
+      {isModalOpen && locationData && (
         <MapModal
           apps={availableApps}
           loadingApp={loadingApp}
@@ -443,7 +549,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
           address={locationData.address}
         />
       )}
-  </div>
+    </div>
   );
 };
 
