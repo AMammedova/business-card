@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Employee } from "@/types/employee";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -39,8 +39,6 @@ const handleShare = async () => {
 };
 
 
-
-// Parse stored location string into address and coords
 const parseLocation = (locationStr: string) => {
   const [address, latSeg, lonSeg] = locationStr.split(" / ");
   return {
@@ -50,7 +48,6 @@ const parseLocation = (locationStr: string) => {
   };
 };
 
-// Modal for choosing map app
 const MapModal: React.FC<{
   apps: MapAppConfig[];
   onSelect: (appId: MapAppId) => void;
@@ -137,6 +134,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingApp, setLoadingApp] = useState<MapAppId | undefined>(undefined);
+  
 
   const isMobile = useMemo(
     () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
@@ -146,40 +144,64 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
     () => /iPhone|iPad|iPod/i.test(navigator.userAgent),
     []
   );
+  const [hasWaze, setHasWaze] = useState(false);
 
-  const availableApps: MapAppConfig[] = useMemo(
-    () => [
-      {
-        id: "google" as MapAppId,
-        label: t("googleMaps"),
-        icon: "/google-map.png",
-      },
-      ...(isMobile
-        ? [
-            {
-              id: "waze" as MapAppId,
-              label: t("waze"),
-              icon: "/waze-icon.png",
-            },
-            {
-              id: "bolt" as MapAppId,
-              label: t("bolt"),
-              icon: "/bolt-icon.png",
-            },
-          ]
-        : []),
-      // ...(isIOS
-      //   ? [
-      //       {
-      //         id: "apple" as MapAppId,
-      //         label: t("appleMaps"),
-      //         icon: "/apple-map.png",
-      //       },
-      //     ]
-      //   : []),
-    ],
-    [isMobile, isIOS]
-  );
+useEffect(() => {
+  const checkWaze = async () => {
+    if (!isMobile) return;
+
+    const timeout = setTimeout(() => setHasWaze(false), 500);
+
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = "waze://";
+    document.body.appendChild(iframe);
+
+    const start = Date.now();
+    window.addEventListener("blur", () => {
+      clearTimeout(timeout);
+      setHasWaze(true); // Waze tətbiq açıldı
+    });
+
+    setTimeout(() => {
+      const elapsed = Date.now() - start;
+      if (elapsed < 500) {
+        setHasWaze(false); // Açılmadı, yoxdur
+      }
+      document.body.removeChild(iframe);
+    }, 500);
+  };
+
+  checkWaze();
+}, [isMobile]);
+
+const availableApps: MapAppConfig[] = useMemo(() => {
+  const apps: MapAppConfig[] = [
+    {
+      id: "google",
+      label: t("googleMaps"),
+      icon: "/google-map.png",
+    },
+  ];
+
+  if (isMobile && hasWaze) {
+    apps.push({
+      id: "waze",
+      label: t("waze"),
+      icon: "/waze-icon.png",
+    });
+  }
+  // if(isMobile){
+  //   apps.push({
+  //     id: "bolt",
+  //     label: t("bolt"),
+  //     icon: "/bolt-icon.png",
+  //   });
+  // }
+
+  return apps;
+}, [isMobile, hasWaze, t]);
+
 
   const openMap = useCallback(
     (app: MapAppId) => {
@@ -237,18 +259,14 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
           setLoadingApp("bolt");
 
           try {
-            // Destination coordinates from locationData
             const {
               latitude: destLat,
               longitude: destLng,
               address: destAddress,
             } = locationData;
 
-            // Detect device type
             const isAndroid = /Android/i.test(navigator.userAgent);
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-            // Create appropriate deep link based on platform
             let boltUrl = "";
 
             if (isAndroid) {
