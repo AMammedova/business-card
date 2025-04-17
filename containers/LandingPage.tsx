@@ -8,7 +8,6 @@ import { useTranslations } from "next-intl";
 import { downloadVCardFromBackend } from "@/utils/vcard";
 import { toast } from "react-toastify";
 
-
 type MapAppId = "google" | "waze" | "bolt" | "apple";
 
 interface MapAppConfig {
@@ -39,40 +38,7 @@ const handleShare = async () => {
   }
 };
 
-const openBoltApp = ({pickupLat, pickupLng, destinationLat, destinationLng, destinationAddress}:{pickupLat: number, pickupLng: number, destinationLat: number, destinationLng: number, destinationAddress: string}) => {
-  try {
-    // Format addresses
-    const encodedDestAddress = encodeURIComponent(destinationAddress || '');
-    
-    // Device detection (react-device-detect əvəzinə native detection)
-    const isAndroid = /Android/i.test(navigator.userAgent);
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
-    let url = '';
 
-    if (isAndroid) {
-      // Android üçün Intent URL formatı
-      url = `intent://ride?pickup_lat=${pickupLat}&pickup_lng=${pickupLng}&destination_lat=${destinationLat}&destination_lng=${destinationLng}#Intent;scheme=bolt;package=ee.mtakso.client;end;`;
-    } else if (isIOS) {
-      // iOS üçün URL sxemi
-      url = `bolt://ride?pickup_lat=${pickupLat}&pickup_lng=${pickupLng}&destination_lat=${destinationLat}&destination_lng=${destinationLng}&destination_address=${encodedDestAddress}`;
-    } else {
-      // Veb versiyası üçün
-      url = `https://bolt.eu`;
-    }
-
-    console.log("Opening Bolt URL:", url);
-    
-    // Tətbiqi açmağa cəhd edin
-    window.location.href = url;
-    
-    // Timeout ilə tamamlayın
-    return true;
-  } catch (error) {
-    console.error("Error opening Bolt app:", error);
-    return false;
-  }
-};
 
 // Parse stored location string into address and coords
 const parseLocation = (locationStr: string) => {
@@ -223,6 +189,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
       }
 
       const { latitude, longitude } = locationData;
+      console.log("Opening map:", app, latitude, longitude);
       setLoadingApp(app);
 
       const done = () => setLoadingApp(undefined);
@@ -260,103 +227,68 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
           done();
           break;
 
-          case "bolt":
-            // Əvvəlcə istifadəçinin mövqeyini bilmirik halı
-            if (!locationData) {
-              toast.error(t("noCoordinates"));
-              done();
-              break;
-            }
-            
-            setLoadingApp("bolt");
-            
-            // Geolocation options
-            const geoOptions = {
-              enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0
-            };
-            
-            // Alternate approach: Try direct deep link if geolocation fails
-            const openBoltWithoutLocation = () => {
-              // Destination coordinates from locationData
-              const { latitude: destLat, longitude: destLng, address: destAddress } = locationData;
-              
-              // Direct deep link without pickup coordinates
-              const directUrl = `bolt://ride?destination_lat=${destLat}&destination_lng=${destLng}&destination_address=${encodeURIComponent(destAddress)}`;
-              
-              window.location.href = directUrl;
-              console.log("Trying direct Bolt link:", directUrl);
-              
-              setTimeout(() => {
-                // Fallback to web
-                window.open("https://bolt.eu", "_blank");
-                done();
-              }, 2000);
-            };
-            
-            // Try to get user location with proper error handling
-            try {
-              navigator.geolocation.getCurrentPosition(
-                ({ coords }) => {
-                  // Success! We have user's location
-                  const { latitude: destLat, longitude: destLng, address: destAddress } = locationData;
-                  
-                  // Try to open Bolt app
-                  openBoltApp(
-             
-                    {
-                      
-                      pickupLat: coords.latitude,
-                      pickupLng: coords.longitude,
-                      destinationLat: destLat,
-                      destinationLng: destLng,
-                      destinationAddress: destAddress,
-                    }
-                  );
-                  
-                  // Clear loading state after delay
-                  setTimeout(() => {
-                    done();
-                  }, 2000);
-                },
-                (error) => {
-                  // Handle specific geolocation errors
-                  console.error("Geolocation error:", error);
-                  
-                  switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                      toast.error(t("locationPermissionDenied") || "Location permission denied");
-                      // Try without location
-                      openBoltWithoutLocation();
-                      break;
-                    case error.POSITION_UNAVAILABLE:
-                      toast.error(t("locationUnavailable") || "Location information unavailable");
-                      openBoltWithoutLocation();
-                      break;
-                    case error.TIMEOUT:
-                      toast.error(t("locationTimeout") || "Location request timed out");
-                      openBoltWithoutLocation();
-                      break;
-                    default:
-                      toast.error(t("locationError") || "Unknown error getting location");
-                      openBoltWithoutLocation();
-                  }
-                  
-                  // Clear loading state
-                  done();
-                },
-                geoOptions
-              );
-            } catch (error) {
-              // Catch any unexpected errors with the Geolocation API itself
-              console.error("Unexpected geolocation error:", error);
-              toast.error(t("geolocationNotSupported") || "Geolocation not supported");
-              openBoltWithoutLocation();
-              done();
-            }
+        case "bolt":
+          if (!locationData) {
+            toast.error(t("noCoordinates"));
+            done();
             break;
-            default:
+          }
+
+          setLoadingApp("bolt");
+
+          try {
+            // Destination coordinates from locationData
+            const {
+              latitude: destLat,
+              longitude: destLng,
+              address: destAddress,
+            } = locationData;
+
+            // Detect device type
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+            // Create appropriate deep link based on platform
+            let boltUrl = "";
+
+            if (isAndroid) {
+              // Android deep link format
+              boltUrl = `intent://ride?destination_lat=${destLat}&destination_lng=${destLng}&destination_address=${encodeURIComponent(
+                destAddress
+              )}#Intent;scheme=bolt;package=ee.mtakso.client;end;`;
+            } else if (isIOS) {
+              // iOS deep link format
+              boltUrl = `bolt://ride?destination_lat=${destLat}&destination_lng=${destLng}&destination_address=${encodeURIComponent(
+                destAddress
+              )}`;
+            } else {
+              // Web fallback
+              boltUrl = `https://bolt.eu`;
+            }
+
+            console.log("Opening Bolt with destination:", {
+              destLat,
+              destLng,
+              boltUrl,
+            });
+
+            // Try to open Bolt app
+            window.location.href = boltUrl;
+
+            // Fallback to web version after delay
+            setTimeout(() => {
+              // If window location didn't change, we're still here, so app didn't open
+              window.open("https://bolt.eu", "_blank");
+              done();
+            }, 2500);
+          } catch (error) {
+            console.error("Error opening Bolt:", error);
+            toast.error(t("errorOpeningApp") || "Error opening Bolt app");
+            done();
+          }
+          break;
+
+        default:
           done();
       }
     },
