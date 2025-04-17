@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState, useMemo, useEffect } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import Image from "next/image";
 import { Employee } from "@/types/employee";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
@@ -144,64 +144,40 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
     () => /iPhone|iPad|iPod/i.test(navigator.userAgent),
     []
   );
-  const [hasWaze, setHasWaze] = useState(false);
 
-useEffect(() => {
-  const checkWaze = async () => {
-    if (!isMobile) return;
-
-    const timeout = setTimeout(() => setHasWaze(false), 500);
-
-    const iframe = document.createElement("iframe");
-    iframe.style.display = "none";
-    iframe.src = "waze://";
-    document.body.appendChild(iframe);
-
-    const start = Date.now();
-    window.addEventListener("blur", () => {
-      clearTimeout(timeout);
-      setHasWaze(true); // Waze tətbiq açıldı
-    });
-
-    setTimeout(() => {
-      const elapsed = Date.now() - start;
-      if (elapsed < 500) {
-        setHasWaze(false); // Açılmadı, yoxdur
-      }
-      document.body.removeChild(iframe);
-    }, 500);
-  };
-
-  checkWaze();
-}, [isMobile]);
-
-const availableApps: MapAppConfig[] = useMemo(() => {
-  const apps: MapAppConfig[] = [
-    {
-      id: "google",
-      label: t("googleMaps"),
-      icon: "/google-map.png",
-    },
-  ];
-
-  if (isMobile && hasWaze) {
-    apps.push({
-      id: "waze",
-      label: t("waze"),
-      icon: "/waze-icon.png",
-    });
-  }
-  // if(isMobile){
-  //   apps.push({
-  //     id: "bolt",
-  //     label: t("bolt"),
-  //     icon: "/bolt-icon.png",
-  //   });
-  // }
-
-  return apps;
-}, [isMobile, hasWaze, t]);
-
+  const availableApps: MapAppConfig[] = useMemo(
+    () => [
+      {
+        id: "google" as MapAppId,
+        label: t("googleMaps"),
+        icon: "/google-map.png",
+      },
+      ...(isMobile
+        ? [
+            {
+              id: "waze" as MapAppId,
+              label: t("waze"),
+              icon: "/waze-icon.png",
+            },
+            // {
+            //   id: "bolt" as MapAppId,
+            //   label: t("bolt"),
+            //   icon: "/bolt-icon.png",
+            // },
+          ]
+        : []),
+      // ...(isIOS
+      //   ? [
+      //       {
+      //         id: "apple" as MapAppId,
+      //         label: t("appleMaps"),
+      //         icon: "/apple-map.png",
+      //       },
+      //     ]
+      //   : []),
+    ],
+    [isMobile, isIOS]
+  );
 
   const openMap = useCallback(
     (app: MapAppId) => {
@@ -238,8 +214,16 @@ const availableApps: MapAppConfig[] = useMemo(() => {
           break;
 
         case "waze":
+          if (!locationData) return;
           if (isMobile) {
-            window.location.href = `waze://?ll=${latitude},${longitude}&navigate=yes`;
+            const wazeUrlApp = `waze://?ll=${latitude},${longitude}&navigate=yes`;
+            const wazeUrlWeb = `https://waze.com/ul?ll=${latitude},${longitude}&navigate=yes`;
+            setTimeout(() => {
+              window.open(wazeUrlWeb, "_blank");
+              done();
+            }, 2000);
+          
+            window.location.href = wazeUrlApp;
           } else {
             window.open(
               `https://www.waze.com/ul?ll=${latitude},${longitude}&navigate=yes`,
