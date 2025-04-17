@@ -43,8 +43,8 @@ const parseLocation = (locationStr: string) => {
   const [address, latSeg, lonSeg] = locationStr.split(" / ");
   return {
     address,
-    latitude: parseFloat(latSeg.replace(/[^0-9.-]/g, "")),
-    longitude: parseFloat(lonSeg.replace(/[^0-9.-]/g, "")),
+    latitude: parseFloat(latSeg?.replace(/[^0-9.-]/g, "")),
+    longitude: parseFloat(lonSeg?.replace(/[^0-9.-]/g, "")),
   };
 };
 
@@ -364,7 +364,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
             {/* Contact Buttons */}
             <div className="mt-6 w-full space-y-3">
               <a
-                href={`https://wa.me/${employee?.phoneNumber.replace(
+                href={`https://wa.me/${employee?.phoneNumber?.replace(
                   /\D/g,
                   ""
                 )}`}
@@ -438,7 +438,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
                           (site, idx) => (
                             <a
                               key={idx}
-                              href={site.url.replace(
+                              href={site?.url?.replace(
                                 "https://tend.grandmart.az:6007/Site/",
                                 ""
                               )}
