@@ -64,14 +64,14 @@ const MapModal: React.FC<{
           {t("modalTitle")}
         </h3>
         <div className="flex justify-around mb-4">
-          {apps.map((app) => (
+          {apps?.map((app) => (
             <button
-              key={app.id}
-              onClick={() => onSelect(app.id)}
-              disabled={loadingApp === app.id}
+              key={app?.id}
+              onClick={() => onSelect(app?.id)}
+              disabled={loadingApp === app?.id}
               className="flex flex-col items-center hover:scale-105 transition disabled:opacity-50"
             >
-              {loadingApp === app.id ? (
+              {loadingApp === app?.id ? (
                 <div className="w-12 h-12 flex items-center justify-center">
                   <svg
                     className="animate-spin h-6 w-6 text-gray-500"
@@ -96,14 +96,14 @@ const MapModal: React.FC<{
               ) : (
                 <>
                   <Image
-                    src={app.icon}
-                    alt={app.label}
+                    src={app?.icon}
+                    alt={app?.label}
                     width={48}
                     height={48}
                     className="rounded-md"
                   />
                   <span className="mt-1 text-xs text-gray-700">
-                    {app.label}
+                    {app?.label}
                   </span>
                 </>
               )}
@@ -126,9 +126,9 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
   employee,
 }) => {
   const t = useTranslations("Landing");
-  const company = employee.businessCardCompanyResponseDto[0];
+  const company = employee?.businessCardCompanyResponseDto[0];
   const locationData = useMemo(
-    () => (company?.location ? parseLocation(company.location) : null),
+    () => (company?.location ? parseLocation(company?.location) : null),
     [company]
   );
 
@@ -328,7 +328,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#EF2831] to-[#EC3237] animate-spin-slow opacity-70"></div>
               <div className="relative w-full h-full rounded-full overflow-hidden border-4 border-white shadow-xl transform transition-all duration-300 hover:scale-105">
                 <img
-                  src={employee.pictureUrl || "/defaultman2.png"}
+                  src={employee?.pictureUrl || "/defaultman2.png"}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -337,16 +337,16 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
 
             <div className="mt-6 text-center space-y-2">
               <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
-                {employee.name} {employee.surname}
+                {employee?.name} {employee?.surname}
               </h2>
               <p className="text-lg text-gray-600 font-medium">
-                {employee.position}
+                {employee?.position}
               </p>
             </div>
 
             <button
               onClick={() =>
-                downloadVCardFromBackend(employee.id, t("success"), t("error"))
+                downloadVCardFromBackend(employee?.id, t("success"), t("error"))
               }
               className="mt-6 py-3.5 px-10 bg-gradient-to-r from-[#FFF200] to-[#FFD100] text-black rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 font-semibold flex items-center gap-2"
             >
@@ -364,7 +364,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
             {/* Contact Buttons */}
             <div className="mt-6 w-full space-y-3">
               <a
-                href={`https://wa.me/${employee.phoneNumber.replace(
+                href={`https://wa.me/${employee?.phoneNumber.replace(
                   /\D/g,
                   ""
                 )}`}
@@ -384,26 +384,26 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
               </a>
 
               <a
-                href={`tel:+${employee.phoneNumber}`}
+                href={`tel:+${employee?.phoneNumber}`}
                 className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
               >
                 <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
                   <Image src="/call.png" alt="Phone" width={20} height={20} />
                 </div>
                 <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                  {employee.phoneNumber}
+                  {employee?.phoneNumber}
                 </span>
               </a>
 
               <a
-                href={`mailto:${employee.mail}`}
+                href={`mailto:${employee?.mail}`}
                 className="flex items-center py-3 px-5 bg-white shadow-md rounded-xl border border-gray-100 hover:bg-gray-50 transition-all duration-300 gap-3 transform hover:translate-x-1 group"
               >
                 <div className="w-10 h-10 rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg">
                   <Image src="/mail.png" alt="Email" width={20} height={20} />
                 </div>
                 <span className="font-medium text-gray-700 group-hover:text-gray-900">
-                  {employee.mail}
+                  {employee?.mail}
                 </span>
               </a>
             </div>
@@ -419,7 +419,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
 
               {/* Sub Categories */}
               <div className="mt-8 grid grid-cols-2 gap-6">
-                {company?.businessCardSubCategoryResponseDto.map(
+                {company?.businessCardSubCategoryResponseDto?.map(
                   (subcategory, index) => (
                     <div
                       key={index}
@@ -434,7 +434,7 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
           {subcategory.name}
         </h3> */}
                       <div className="flex gap-2 mt-2">
-                        {subcategory?.businessCardLogoResponseDtos.map(
+                        {subcategory?.businessCardLogoResponseDtos?.map(
                           (site, idx) => (
                             <a
                               key={idx}
