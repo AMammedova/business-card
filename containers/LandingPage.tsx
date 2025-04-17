@@ -7,7 +7,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useTranslations } from "next-intl";
 import { downloadVCardFromBackend } from "@/utils/vcard";
 import { toast } from "react-toastify";
-import { isAndroid, isIOS } from 'react-device-detect';
+
 
 type MapAppId = "google" | "waze" | "bolt" | "apple";
 
@@ -39,7 +39,7 @@ const handleShare = async () => {
   }
 };
 
-const openBoltApp = (pickupLat, pickupLng, destinationLat, destinationLng, destinationAddress) => {
+const openBoltApp = ({pickupLat, pickupLng, destinationLat, destinationLng, destinationAddress}:{pickupLat: number, pickupLng: number, destinationLat: number, destinationLng: number, destinationAddress: string}) => {
   try {
     // Format addresses
     const encodedDestAddress = encodeURIComponent(destinationAddress || '');
@@ -303,12 +303,16 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
                   const { latitude: destLat, longitude: destLng, address: destAddress } = locationData;
                   
                   // Try to open Bolt app
-                  const success = openBoltApp(
-                    coords.latitude, 
-                    coords.longitude, 
-                    destLat, 
-                    destLng,
-                    destAddress
+                  openBoltApp(
+             
+                    {
+                      
+                      pickupLat: coords.latitude,
+                      pickupLng: coords.longitude,
+                      destinationLat: destLat,
+                      destinationLng: destLng,
+                      destinationAddress: destAddress,
+                    }
                   );
                   
                   // Clear loading state after delay
