@@ -10,6 +10,16 @@
     "email": "E-poçt",
     "location": "Məkan",
     "success":"Əlaqə kartı uğurla yükləndi!",
-    "error":"Xəta baş verdi!"
+    "error":"Xəta baş verdi!",
+    "modalTitle":"Bununla açın",
+    "cancel":"Ləğv et",
+    "bolt":"Bolt",
+    "waze":"Waze",
+    "googleMaps":"Google",
+    "appleMaps":"Apple",
+    "noCoordinates": "Koordinatlar mövcud deyil.",
+    "appleOnly": "Apple Maps yalnız iPhone/iPad cihazlarında istifadə oluna bilər.",
+    "boltNotFound": "Bolt tətbiqi tapılmadı, vebsaytı açırıq.",
+    "locationError": "Lokasiyanı almaq mümkün olmadı."
   }
 }

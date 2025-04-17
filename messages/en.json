@@ -10,6 +10,16 @@
     "email": "Email",
     "location": "Location",
     "success":"Contact card downloaded successfully!",
-    "error":"An error occurred!"
+    "error":"An error occurred!",
+    "modalTitle":"Open with",
+    "cancel":"Cancel",
+    "bolt":"Bolt",
+    "waze":"Waze",
+    "googleMaps":"Google",
+    "appleMaps":"Apple",
+    "noCoordinates": "Coordinates are not available.",
+    "appleOnly": "Apple Maps is only available on iPhone/iPad devices.",
+    "boltNotFound": "Bolt app not found, opening website instead.",
+    "locationError": "Failed to retrieve location."
   }
 }
