@@ -152,17 +152,17 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
       },
       ...(isMobile
         ? [
-            {
-              id: "waze" as MapAppId,
-              label: t("waze"),
-              icon: "/waze-icon.png",
-            },
-            // {
-            //   id: "bolt" as MapAppId,
-            //   label: t("bolt"),
-            //   icon: "/bolt-icon.png",
-            // },
-          ]
+          {
+            id: "waze" as MapAppId,
+            label: t("waze"),
+            icon: "/waze-icon.png",
+          },
+          // {
+          //   id: "bolt" as MapAppId,
+          //   label: t("bolt"),
+          //   icon: "/bolt-icon.png",
+          // },
+        ]
         : []),
       // ...(isIOS
       //   ? [
@@ -417,65 +417,78 @@ const DigitalBusinessCard: React.FC<{ employee: Employee }> = ({
 
               {/* Sub Categories */}
               <div className="mt-8 grid grid-cols-2 gap-6">
-  {company?.businessCardSubCategoryResponseDto?.map((subcategory, index) => {
-    const isSingleItem =
-      company?.businessCardSubCategoryResponseDto?.length === 1;
-    const isLastOddItem =
-      company?.businessCardSubCategoryResponseDto?.length % 2 === 1 &&
-      index === company.businessCardSubCategoryResponseDto.length - 1;
+                {company?.businessCardSubCategoryResponseDto?.map((subcategory, index) => {
+                  const isSingleItem =
+                    company?.businessCardSubCategoryResponseDto?.length === 1;
+                  const isLastOddItem =
+                    company?.businessCardSubCategoryResponseDto?.length % 2 === 1 &&
+                    index === company.businessCardSubCategoryResponseDto.length - 1;
 
-    return (
-      <div
-        key={index}
-        className={`w-full sm:w-[280px] flex flex-col items-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ${
-          isSingleItem || isLastOddItem ? "col-span-2 justify-self-center" : ""
-        }`}
-      >
-        <img
-          src={subcategory?.url}
-          alt={subcategory?.name}
-          className="h-20 w-40 object-cover"
-        />
-        <div className="flex gap-2 mt-2">
-          {subcategory?.businessCardLogoResponseDtos?.map((site, idx) => (
-            <a
-              key={idx}
-              href={site?.url?.replace(
-                "https://tend.grandmart.az:6007/Site/",
-                ""
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shadow-md hover:scale-110 hover:shadow-lg"
-            >
-              <Image
-                src={`/${getSiteIcon(site.url)}`}
-                alt="Site Icon"
-                width={20}
-                height={20}
-              />
-            </a>
-          ))}
-        </div>
-      </div>
-    );
-  })}
-</div>
+                  return (
+                    <div
+                      key={index}
+                      className={`w-full sm:w-[280px] flex flex-col items-center p-4 bg-white rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 ${isSingleItem || isLastOddItem ? "col-span-2 justify-self-center" : ""
+                        }`}
+                    >
+                      <img
+                        src={subcategory?.url}
+                        alt={subcategory?.name}
+                        className="h-20 w-40 object-cover"
+                      />
+                      <div className="flex gap-2 mt-2">
+                        {subcategory?.businessCardLogoResponseDtos?.map((site, idx) => (
+                          <a
+                            key={idx}
+                            href={site?.url?.replace(
+                              "https://tend.grandmart.az:6007/Site/",
+                              ""
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center shadow-md hover:scale-110 hover:shadow-lg"
+                          >
+                            <Image
+                              src={`/${getSiteIcon(site.url)}`}
+                              alt="Site Icon"
+                              width={20}
+                              height={20}
+                            />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
 
               <div
                 onClick={() => setIsModalOpen(true)}
-                className="text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8 animate-pulse text-blue-900 rounded-full"
+                className="relative text-center text-sm font-medium p-4 cursor-pointer flex items-center gap-2 justify-center mt-8"
               >
-                <Image
-                  src="/Subtract.svg"
-                  alt="Location"
-                  className="text-blue-400"
-                  width={16}
-                  height={16}
-                />
-                <span>{locationData?.address}</span>{" "}
-          
+                <div className="relative w-8 h-8 flex items-center justify-center">
+                  {/* Pulsing background effect */}
+                  <div className="absolute w-full h-full bg-red-500 rounded-full opacity-25 animate-ping"></div>
+
+                  {/* Main pin shape */}
+                  <div className="relative w-6 h-6">
+                    <div className="absolute w-full h-full bg-red-500 rounded-full"></div>
+                    <div
+                      className="absolute w-3 h-3 bg-red-500"
+                      style={{
+                        clipPath: 'polygon(50% 100%, 0 0, 100% 0)',
+                        bottom: '-8px',
+                        left: '50%',
+                        transform: 'translateX(-50%)'
+                      }}
+                    ></div>
+                    {/* Inner white circle */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+                <span className="text-gray-700 font-medium mt-3 hover:text-gray-600">{locationData?.address}</span>
               </div>
             </div>
           </div>
