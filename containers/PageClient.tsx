@@ -6,12 +6,17 @@ import LandingPage from "@/containers/LandingPage";
 import Loading from "@/components/Loading";
 import ErrorComponent from "@/components/Error";
 import NotFound from "@/components/NotFound";
+import { useAxiosLocale } from "@/services/employeeService";
 
 interface Props {
   id: string;
 }
 
 export default function PageClient({ id }: Props) {
+  // Set up axios with current locale
+  useAxiosLocale();
+  
+  // Now useEmployee will use the updated axios instance with correct locale
   const { employee, loading, error } = useEmployee(Number(id));
 
   // ✅ Dynamic title

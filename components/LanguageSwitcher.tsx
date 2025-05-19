@@ -20,9 +20,19 @@ const LanguageSwitcher = () => {
   const changeLanguage = (lang: string) => {
     if (lang === currentLocale) return;
 
-    document.cookie = `NEXT_LOCALE=${lang}; path=/`;
-    const newPath = `/${lang}${pathname.substring(3)}`;
-    router.push(newPath);
+    // Set cookie for the locale
+    document.cookie = `NEXT_LOCALE=${lang}; path=/; max-age=31536000`;
+    
+    // Update the URL path to reflect the new locale
+    if (pathname) {
+      const newPath = pathname.replace(/^\/(en|az|ru)/, `/${lang}`);
+      router.push(newPath);
+      
+      // Force reload the page to ensure all components get the new locale
+      // This is optional and should be removed once the other fixes are in place
+      // window.location.href = newPath;
+    }
+    
     setIsOpen(false);
   };
 

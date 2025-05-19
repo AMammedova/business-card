@@ -1,63 +1,52 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import axios, { CancelTokenSource } from "axios";
+import { CancelTokenSource } from "axios";
 import { Employee } from "@/types/employee";
+import { fetchEmployee } from "@/services/employeeService";
+import { useLocale } from "next-intl";
 
-const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
-
-
-const cache = new Map<number, Employee>();
+// Modified cache to include locale in the key
+const cache = new Map<string, Employee>();
 
 const useEmployee = (employeeId: number) => {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const cancelTokenRef = useRef<CancelTokenSource | null>(null);
+  const locale = useLocale();
+  
+  // Create a cache key that includes both employeeId and locale
+  const cacheKey = `${employeeId}-${locale}`;
 
   useEffect(() => {
     if (!employeeId) return;
-    if (cache.has(employeeId)) {
-      setEmployee(cache.get(employeeId)!);
+    
+    // Check cache with combined key of employeeId and locale
+    if (cache.has(cacheKey)) {
+      setEmployee(cache.get(cacheKey)!);
       setLoading(false);
       return;
     }
 
-    const fetchEmployee = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError(null);
 
+      // Cancel previous request if any
       cancelTokenRef.current?.cancel();
-      cancelTokenRef.current = axios.CancelToken.source();
 
       try {
-        const locale =
-          typeof document !== "undefined"
-            ? document.cookie
-                .split("; ")
-                .find((row) => row.startsWith("NEXT_LOCALE"))
-                ?.split("=")[1] || "en"
-            : "en";
-
-        const response = await axios.post(
-          `${API_URL}/get-by-employee-id`,
-          {},
-          {
-            params: { employeeId },
-            headers: {
-              accept: "*/*",
-              "Accept-Language": locale,
-            },
-            cancelToken: cancelTokenRef.current.token,
-            timeout: 5000,
-          }
-        );
-
-        const data = response.data.data;
-        cache.set(employeeId, data);
-        setEmployee(data);
+        const data = await fetchEmployee(employeeId);
+        if (data) {
+          // Store in cache with the combined key
+          cache.set(cacheKey, data);
+          setEmployee(data);
+        } else {
+          setError("No employee data found");
+        }
       } catch (err: unknown) {
-        if (axios.isCancel(err)) {
+        if ((err as any)?.__CANCEL__) {
           console.log("Request canceled:", (err as Error).message);
         } else if (err instanceof Error) {
           console.error("Error fetching employee:", err.message);
@@ -71,12 +60,12 @@ const useEmployee = (employeeId: number) => {
       }
     };
 
-    fetchEmployee();
+    fetchData();
 
     return () => {
       cancelTokenRef.current?.cancel("Component unmounted or ID changed");
     };
-  }, [employeeId]);
+  }, [employeeId, locale, cacheKey]); // Add locale and cacheKey to dependencies
 
   return { employee, loading, error };
 };
