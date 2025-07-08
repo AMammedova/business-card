@@ -1,6 +1,5 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 import { useState, useEffect, useRef } from "react";
 
@@ -11,28 +10,14 @@ const languages = [
 ];
 
 const LanguageSwitcher = () => {
-  const router = useRouter();
-  const pathname = usePathname();
   const currentLocale = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const changeLanguage = (lang: string) => {
     if (lang === currentLocale) return;
-
-    // Set cookie for the locale
     document.cookie = `NEXT_LOCALE=${lang}; path=/; max-age=31536000`;
-    
-    // Update the URL path to reflect the new locale
-    if (pathname) {
-      const newPath = pathname.replace(/^\/(en|az|ru)/, `/${lang}`);
-      router.push(newPath);
-      
-      // Force reload the page to ensure all components get the new locale
-      // This is optional and should be removed once the other fixes are in place
-      // window.location.href = newPath;
-    }
-    
+    window.location.reload();
     setIsOpen(false);
   };
 

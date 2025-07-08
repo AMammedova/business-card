@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 };
 
 export default function Page({ params }: Props) {
+  console.log("Page params:", params);
   return <PageClient id={params.id} />;
 }
 

@@ -1,5 +1,3 @@
-
-
 export interface SiteLink {
   url: string; 
 }
@@ -20,13 +18,25 @@ export interface CompanyResponseDto {
   businessCardSubCategoryResponseDto: SubCategory[];
 }
 
+export interface Phone {
+  id: number;
+  phoneNumber: string;
+  isPrimary: boolean;
+}
+
+export interface Email {
+  id: number;
+  email: string;
+  isPrimary: boolean;
+}
+
 export interface Employee {
   id: number;
   pictureUrl: string;
   name: string;
   surname: string;
-  phoneNumber: string;
-  mail: string;
+  phones: Phone[];
+  emails: Email[];
   position: string;
   businessCardCompanyResponseDto: CompanyResponseDto[];
 }

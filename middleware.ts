@@ -4,26 +4,14 @@ import { NextRequest, NextResponse } from 'next/server';
 const intlMiddleware = createMiddleware({
   locales: ['en', 'az', 'ru'],
   defaultLocale: 'en',
-  localePrefix: 'always'
+  localePrefix: 'never'
 });
 
 export function middleware(request: NextRequest) {
-  const { pathname, searchParams } = request.nextUrl;
-
-  if (
-    pathname === '/' ||
-    pathname === '/en' ||
-    pathname === '/az' ||
-    pathname === '/ru'
-  ) {
-    const id = searchParams.get('id') || '1018';
-
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = `${pathname.replace(/\/$/, '')}/profile/${id}`;
-
-    return NextResponse.redirect(redirectUrl);
-  }
-
+  // Remove the redirect logic - let users see the landing page on root paths
+  // QR codes will directly go to the slug URL (e.g., /az/grandmart/babek-aghamuradli)
+  
+  // Use the intl middleware for all routes
   return intlMiddleware(request);
 }
 
